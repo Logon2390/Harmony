@@ -1,32 +1,34 @@
 #include "HueMintService.hpp"
 #include "../managers/HueMintManager.hpp"
 
-std::string HueMintService::m_url = "https://api.huemint.com/color";
-async::TaskHolder<web::WebResponse> HueMintService::m_listener;
-PaletteResult HueMintService::m_currentPaletteResult {};
+PaletteResult HueMintService::m_currentPaletteResult{};
+HueMintManager &manager = HueMintManager::get();
 
 void HueMintService::request(std::function<void(Palette)> onComplete)
 {
     auto req = web::WebRequest();
 
-    matjson::Value myjson = HueMintManager::exampleRequest();
+    matjson::Value myjson = manager.getRequest();
     req.header("Content-Type", "application/json");
     req.bodyJSON(myjson);
 
-    m_listener.spawn(
-        req.post(m_url),
-        [onComplete](web::WebResponse res)
-        {
-            ResponseBody parsed = res.json().unwrap().as<ResponseBody>().unwrap();
-            PaletteResult result = buildPaletteResult(parsed);
+    m_listener.spawn(req.post(m_url), [this, onComplete](web::WebResponse res) {
+      if (res.ok()) {
+        ResponseBody parsed = res.json().unwrap().as<ResponseBody>().unwrap();
+        PaletteResult result = mapPaletteResult(parsed);
 
-            Palette palette = parsed.results.empty() ? Palette{} : parsed.results.at(0);
-            onComplete(palette);
-            return palette;
-        });
+        Palette palette = parsed.results.empty() ? Palette{} : parsed.results.at(0);
+        onComplete(palette);
+        return palette;
+      }
+
+      geode::log::error("Request failed with code {} and message: {}", res.code(), res.errorMessage());
+      onComplete(Palette{});
+      return Palette{};
+    });
 }
 
-PaletteResult HueMintService::buildPaletteResult(ResponseBody response) {
+PaletteResult HueMintService::mapPaletteResult(ResponseBody response) {
     PaletteResult result;
     result.items = response.results.size();
     result.currentItem = 0;

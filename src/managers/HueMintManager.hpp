@@ -11,6 +11,7 @@ struct RequestBody
     int num_colors{};                     // max 12, min 2
     float temperature{};                  // max 2.4, min 0
     int num_results{};                    // max 50 for transformer, 5 for diffusion
+    std::string preset{};                 // optional preset name
     std::vector<std::string> adjacency{}; // nxn adjacency matrix as a flat array of strings
     std::vector<std::string> palette{};   // array of hex color strings, length must match num_colors};
 };
@@ -43,6 +44,7 @@ struct matjson::Serialize<RequestBody>
         GEODE_UNWRAP_INTO(data.num_colors, value["num_colors"].asInt());
         GEODE_UNWRAP_INTO(data.temperature, value["temperature"].asDouble());
         GEODE_UNWRAP_INTO(data.num_results, value["num_results"].asInt());
+        GEODE_UNWRAP_INTO(data.preset, value["preset"].asString());
         GEODE_UNWRAP_INTO(data.adjacency, value["adjacency"].as<std::vector<std::string>>());
         GEODE_UNWRAP_INTO(data.palette, value["palette"].as<std::vector<std::string>>());
         return geode::Ok(data);
@@ -50,12 +52,17 @@ struct matjson::Serialize<RequestBody>
 
     static matjson::Value toJson(const RequestBody &value)
     {
-        return matjson::makeObject({{"mode", value.mode},
-                                    {"num_colors", value.num_colors},
-                                    {"temperature", value.temperature},
-                                    {"num_results", value.num_results},
-                                    {"adjacency", value.adjacency},
-                                    {"palette", value.palette}});
+        return matjson::makeObject(
+            {
+                {"mode", value.mode},
+                {"num_colors", value.num_colors},
+                {"temperature", value.temperature},
+                {"num_results", value.num_results},
+                {"preset", value.preset},
+                {"adjacency", value.adjacency},
+                {"palette", value.palette}
+            });
+
     }
 };
 
@@ -72,8 +79,11 @@ struct matjson::Serialize<Palette>
 
     static matjson::Value toJson(const Palette &value)
     {
-        return matjson::makeObject({{"palette", value.colors},
-                                    {"score", value.score}});
+        return matjson::makeObject(
+            {
+                {"palette", value.colors},
+                {"score", value.score}
+            });
     }
 };
 
@@ -89,24 +99,53 @@ struct matjson::Serialize<ResponseBody>
 
     static matjson::Value toJson(const ResponseBody &value)
     {
-        return matjson::makeObject({{"results", value.results}});
+        return matjson::makeObject(
+            {
+                {"results", value.results}
+            });
     }
 };
 
-class HueMintManager
-{
+class HueMintManager {
 public:
-    static Palette getNextPalette();
-    static Palette getPrevPalette();
-    static RequestBody exampleRequest()
-    {
-        RequestBody request;
-        request.mode = "transformer";
-        request.num_colors = 4;
-        request.temperature = 1.0f;
-        request.num_results = 3;
-        request.adjacency = {"0", "65", "45", "35", "65", "0", "35", "65", "45", "35", "0", "35", "35", "65", "35", "0"};
-        request.palette = {"#ffffff", "-", "-", "-"};
-        return request;
+  static constexpr int MAX_COLORS = 12;
+  static constexpr int MIN_COLORS = 2;
+  static HueMintManager &get() {
+    static HueMintManager instance;
+    return instance;
+  }
+
+  Palette getNextPalette();
+  Palette getPrevPalette();
+  std::string setMode(bool next);
+  std::string setPreset(bool next);
+  void setMaxColors(int numColors);
+  void setNumResults(int numResults);
+  void setTemperature(float temperature);
+  void toggleColorLock(int index, std::string colorHex);
+  bool isColorLocked(int index);
+  void reset();
+  const RequestBody &getRequest() const;
+
+private:
+    RequestBody m_request;
+    std::array<std::string, 3> m_modes;
+    std::array<std::string, 7> m_presets;
+    const RequestBody m_defaultRequest = {
+        .mode = "transformer",
+        .num_colors = 4,
+        .temperature = 1.0f,
+        .num_results = 10,
+        .preset = "default",
+        .adjacency = {"0", "30", "90", "0", "30", "0", "70", "50", "90", "70",
+                      "0", "0", "0", "50", "0", "0"},
+        //.adjacency = {"0", "65", "45", "35", "65", "0", "35","65", "45", "35",
+        //"0", "35", "35", "65","35", "0"},
+        .palette = {"-", "-", "-", "-"}};
+
+    HueMintManager() {
+      m_modes = {"transformer", "diffusion", "random"};
+      m_presets = {"default", "high-contrast", "bright-light", "pastel", "vibrant", "dark", "hyper-color"};
+      m_request = m_defaultRequest;
     }
-};
+  };

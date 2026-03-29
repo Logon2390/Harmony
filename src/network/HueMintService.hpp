@@ -9,12 +9,19 @@ using namespace geode::prelude;
 class HueMintService
 {
 public:
+    static HueMintService &get() {
+        static HueMintService instance;
+        return instance;
+    } 
     static PaletteResult m_currentPaletteResult;
-    static void request(std::function<void(Palette)> onComplete);
-    static void resetPalette();
+    void request(std::function<void(Palette)> onComplete);
+    void resetPalette();
 
 private:
-    static PaletteResult buildPaletteResult(ResponseBody response);
-    static async::TaskHolder<web::WebResponse> m_listener;
-    static std::string m_url;
+    PaletteResult mapPaletteResult(ResponseBody response);
+    async::TaskHolder<web::WebResponse> m_listener;
+    std::string m_url;
+    HueMintService() {
+        m_url = "https://api.huemint.com/color";
+    };
 };
