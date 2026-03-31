@@ -110,6 +110,10 @@ class HueMintManager {
 public:
   static constexpr int MAX_COLORS = 12;
   static constexpr int MIN_COLORS = 2;
+  static constexpr float MAX_TEMPERATURE = 2.4f;
+  static constexpr float MIN_TEMPERATURE = 0.f;
+  static constexpr int MAX_RESULTS = 50;
+  static constexpr int MIN_RESULTS = 5;
   static HueMintManager &get() {
     static HueMintManager instance;
     return instance;

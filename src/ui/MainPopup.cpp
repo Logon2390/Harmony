@@ -11,10 +11,11 @@
 
 #include "../managers/HueMintManager.hpp"
 #include "../network/HueMintService.hpp"
+#include "SettingsPopup.cpp"
 
 #include <Geode/ui/ColorPickPopup.hpp>
 #include <Geode/utils/async.hpp>
-#include <Geode/ui/TextInput.hpp>
+
 
 using namespace geode::prelude;
 
@@ -37,11 +38,9 @@ protected:
   std::array<CCMenuItemSpriteExtra *, HueMintManager::MAX_COLORS> m_colorButtons;
   ButtonSprite* m_generateBtn;
   CCLabelBMFont* m_infoLabel;
-  CCLabelBMFont* m_modeLabel;
-  CCLabelBMFont* m_presetLabel;
-  TextInput* m_colorsInput;
-  TextInput* m_temperatureInput;
-  TextInput* m_resultsInput;
+  
+ 
+
   CCMenu* m_modesMenu;
   CCMenu* m_navMenu;
   CCMenu* m_colorsMenu;
@@ -102,19 +101,6 @@ protected:
     colorsBG->setColor({130, 64, 33});
     colorsBG->setZOrder(1);
     colorsBG->setID("colorsBG"_spr);
-
-    CCScale9Sprite *settingsBG = cocos2d::extension::CCScale9Sprite::create(
-        backgroundSpriteName, {0.0f, 0.0f, 80.0f, 80.0f});
-    m_mainLayer->addChildAtPosition(settingsBG, Anchor::Center,ccp(0.f, -60.f));
-    settingsBG->setContentSize({400.f, 100.f});
-    settingsBG->setColor({130, 64, 33});
-    settingsBG->setZOrder(1);
-    settingsBG->setID("settingsBG"_spr);
-
-    CCLabelBMFont *settingsLabel = CCLabelBMFont::create("Settings", goldFontName);
-    settingsBG->addChildAtPosition(settingsLabel, Anchor::TopLeft,ccp(10.f, 7.5f));
-    settingsLabel->setScale(0.5f);
-    settingsLabel->setAnchorPoint(ccp(0.f, 1.f));
 
     m_colorsMenu = CCMenu::create();
     m_colorsMenu->setContentSize(ccp(400.f, 100.f));
@@ -191,6 +177,7 @@ protected:
     m_generateBtn = ButtonSprite::create("Generate");
     m_generateBtn->setScale(0.7f);
 
+
     CCSprite* prevSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
     CCSprite* nextSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
     CCMenuItemSpriteExtra* m_prev = CCMenuItemSpriteExtra::create(prevSprite, this, menu_selector(MainPopup::onPrevPalette));
@@ -211,107 +198,6 @@ protected:
     m_infoLabel->setScale(0.4f);
     m_infoLabel->setAnchorPoint(ccp(0.f, 0.5f));
     colorsBG->addChildAtPosition(m_infoLabel, Anchor::BottomLeft,ccp(0.f, -10.5f));
-
-    m_colorsInput = TextInput::create(40.f, "6", bigFontName);
-    m_colorsInput->setLabel("Colors");
-    m_colorsInput->setString(std::to_string(manager.getRequest().num_colors).c_str());
-    m_colorsInput->setAnchorPoint(ccp(0.f, 0.5f));
-    m_colorsInput->setCommonFilter(CommonFilter::Int);
-    m_colorsInput->setMaxCharCount(2);
-    m_colorsInput->setCallback([this](gd::string input) {
-        this->onColorsInput(input);
-    });
-
-    m_temperatureInput = TextInput::create(40.f, "1.3", bigFontName);
-    m_temperatureInput->setLabel("Temp");
-    m_temperatureInput->setString(std::to_string(manager.getRequest().temperature).erase(3).c_str());
-    m_temperatureInput->setAnchorPoint(ccp(0.f, 0.5f));
-    m_temperatureInput->setCommonFilter(CommonFilter::Float);
-    m_temperatureInput->setMaxCharCount(3);
-    m_temperatureInput->setCallback([this](gd::string input) {
-        this->onTemperatureInput(input);
-    });
-
-    settingsBG->addChildAtPosition(m_colorsInput, Anchor::TopLeft, ccp(10.f, -35.f));
-    settingsBG->addChildAtPosition(m_temperatureInput, Anchor::TopLeft, ccp(60.f, -35.f));
-
-    CCLabelBMFont* modeLabel = CCLabelBMFont::create("Mode", goldFontName);
-    modeLabel->setScale(0.35f);
-    modeLabel->setAnchorPoint(ccp(0.f, 0.5f));
-
-    m_modeLabel = CCLabelBMFont::create(manager.getRequest().mode.c_str(), bigFontName);
-    m_modeLabel->setScale(0.5f);
-  
-    CCSprite* prevModeSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
-    CCSprite* nextModeSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
-
-    prevModeSpr->setScale(0.6f);
-    nextModeSpr->setScale(0.6f);
-    nextModeSpr->setFlipX(true);
-
-    CCMenu* modeMenu = CCMenu::create(
-      CCMenuItemSpriteExtra::create(prevModeSpr, this, menu_selector(MainPopup::onprevMode)),
-      m_modeLabel,
-      CCMenuItemSpriteExtra::create(nextModeSpr, this, menu_selector(MainPopup::onNextMode)),
-      nullptr);
-
-    modeMenu->setAnchorPoint(ccp(0.f, 0.5f));
-    modeMenu->setContentSize({160.f, 60.f});
-    modeMenu->setLayout(
-        RowLayout::create()
-            ->setGap(0.5f)
-            ->setAxisAlignment(AxisAlignment::Between)
-            ->setCrossAxisLineAlignment(AxisAlignment::Center)
-            ->setCrossAxisOverflow(false)
-            ->setAutoScale(false));
-
-    settingsBG->addChildAtPosition(modeLabel, Anchor::TopLeft, ccp(135.f, -13.f));
-    settingsBG->addChildAtPosition(modeMenu, Anchor::TopLeft, ccp(110.f, -30.f));
-
-    CCLabelBMFont* presetLabel = CCLabelBMFont::create("Preset", goldFontName);
-    presetLabel->setScale(0.35f);
-    presetLabel->setAnchorPoint(ccp(0.f, 0.5f));
-
-    m_presetLabel = CCLabelBMFont::create(manager.getRequest().preset.c_str(), bigFontName);
-    m_presetLabel->setScale(0.4f);
-  
-    CCSprite* prevPresetSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
-    CCSprite* nextPresetSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
-
-    prevPresetSpr->setScale(0.6f);
-    nextPresetSpr->setScale(0.6f);
-    nextPresetSpr->setFlipX(true);
-
-    CCMenu* presetMenu = CCMenu::create(
-      CCMenuItemSpriteExtra::create(prevPresetSpr, this, menu_selector(MainPopup::onprevPreset)),
-      m_presetLabel,
-      CCMenuItemSpriteExtra::create(nextPresetSpr, this, menu_selector(MainPopup::onNextPreset)),
-      nullptr);
-
-    presetMenu->setAnchorPoint(ccp(0.f, 0.5f));
-    presetMenu->setContentSize({160.f, 60.f});
-    presetMenu->setLayout(
-        RowLayout::create()
-            ->setGap(0.5f)
-            ->setAxisAlignment(AxisAlignment::Between)
-            ->setCrossAxisLineAlignment(AxisAlignment::Center)
-            ->setCrossAxisOverflow(false)
-            ->setAutoScale(false));
-
-    settingsBG->addChildAtPosition(presetLabel, Anchor::TopLeft, ccp(135.f, -60.f));
-    settingsBG->addChildAtPosition(presetMenu, Anchor::TopLeft, ccp(110.f, -75.f));
-
-    m_resultsInput = TextInput::create(40.f, "10", bigFontName);
-    m_resultsInput->setLabel("Results");
-    m_resultsInput->setString(std::to_string(manager.getRequest().num_results).c_str());
-    m_resultsInput->setAnchorPoint(ccp(0.f, 0.5f));
-    m_resultsInput->setCommonFilter(CommonFilter::Int);
-    m_resultsInput->setMaxCharCount(2);
-    m_resultsInput->setCallback([this](gd::string input) {
-        this->onResultsInput(input);
-    });
-
-    settingsBG->addChildAtPosition(m_resultsInput, Anchor::TopLeft, ccp(10.f, -80.f));
 
     if (m_isLoaded) loadLastState();
 
@@ -350,22 +236,16 @@ protected:
   }
 
   void onReset(CCObject *) {
-    geode::createQuickPopup(
-        "Reset all settings",
-        "Are you sure you want to reset all settings?",
-        "Cancel", "Reset",
-        [this](auto, bool btn2) {
-          if (btn2) {
-            handleReset();
-          }
-        });
+
   }
 
   void onSave(CCObject *) {
     m_colorChannels.at(0)->getParent();
   }
 
-  void onSettings(CCObject *) {m_colorsMenu->removeAllChildren();}
+  void onSettings(CCObject *) {
+    SettingsPopup::create()->show();
+  }
 
   void onGeneratePalette(CCObject *) {
     m_generateBtn->setString("Loading...");
@@ -376,7 +256,6 @@ protected:
           self->updateColorChannels(result);
           self->updateInfoLabel();
           self->updateNavigationButtons();
-          self->updateFields();
           self->m_generateBtn->setString("Generate");
         } else {
           FLAlertLayer::create(
@@ -397,21 +276,7 @@ protected:
     updateInfoLabel();
   }
 
-  void onNextMode(CCObject *) {
-    m_modeLabel->setString(manager.setMode(true).c_str());
-  }
 
-  void onprevMode(CCObject *) {
-    m_modeLabel->setString(manager.setMode(false).c_str());
-  }
-
-  void onprevPreset(CCObject *) {
-    m_presetLabel->setString(manager.setPreset(false).c_str());
-  }
-
-  void onNextPreset(CCObject *) {
-    m_presetLabel->setString(manager.setPreset(true).c_str());
-  }
 
   void onLockColorChannel(CCObject *sender) {
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
@@ -421,32 +286,6 @@ protected:
     manager.toggleColorLock(index, ColorSelectPopup::colorToHex(color));
     updateLockButton(index, manager.isColorLocked(index));
   }
-
-  void onColorsInput(gd::string input) {
-    int value = static_cast<int>(std::strtol(input.c_str(), nullptr, 10));
-    if (value < HueMintManager::MIN_COLORS || value > HueMintManager::MAX_COLORS) return;
-
-    for (int i = 0; i < HueMintManager::MAX_COLORS; i++) {
-      bool show = i < value; 
-      updateColorsButton(i, show);
-    }
-
-    manager.setMaxColors(value);
-    m_colorsMenu->updateLayout();
-    m_lockMenu->updateLayout();
-  }
-
-  void onResultsInput(gd::string input) {
-    int value = static_cast<int>(std::strtol(input.c_str(), nullptr, 10));
-    manager.setNumResults(value);
-  }
-
-  void onTemperatureInput(gd::string input) {
-    float value = static_cast<float>(std::strtof(input.c_str(), nullptr));
-    if (value < 0 || value > 2.4) return;
-
-    manager.setTemperature(value);
-   }
 
   void updateColorChannels(Palette palette) {
     for (size_t i = 0; i < palette.colors.size(); i++) {
@@ -488,29 +327,20 @@ protected:
         CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frame));
   }
 
-  void updateFields(){
-    m_colorsInput->setString(std::to_string(manager.getRequest().num_colors).c_str());
-    m_temperatureInput->setString(std::to_string(manager.getRequest().temperature).erase(3).c_str());
 
-    int results = (HueMintService::m_currentPaletteResult.items == 0) ? 10 : HueMintService::m_currentPaletteResult.items;
-    m_resultsInput->setString(std::to_string(results).c_str());
-  }
 
   void handleReset() {
     m_isLoaded = false;
     manager.reset();
     service.resetPalette();
     updateNavigationButtons();
-    updateFields();
+    //updateFields();
 
     for (int i = 0; i < HueMintManager::MAX_COLORS; i++) {
       m_colorChannels.at(i)->setColor({255, 255, 255});
       updateLockButton(i, false);
       updateColorsButton(i, i < manager.getRequest().num_colors);
     }
-
-    m_presetLabel->setString(manager.getRequest().preset.c_str());
-    m_modeLabel->setString(manager.getRequest().mode.c_str());
     m_infoLabel->setString("");
 
     m_colorsMenu->updateLayout();
