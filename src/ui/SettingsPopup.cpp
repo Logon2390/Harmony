@@ -7,6 +7,7 @@ using namespace geode::prelude;
 
 class SettingsPopup : public Popup {
 public:
+  std::function<void()> onColorsChanged = []() {};
   static SettingsPopup *create() {
     auto popup = new SettingsPopup;
     if (popup->init()) {
@@ -174,6 +175,7 @@ protected:
       manager.setMaxColors(HueMintManager::MAX_COLORS);
       m_colors->setString(std::to_string(HueMintManager::MAX_COLORS).c_str());
     }
+    onColorsChanged();
   }
 
   void onIncreaseColors(CCObject *) {
@@ -185,6 +187,7 @@ protected:
       manager.setMaxColors(HueMintManager::MIN_COLORS);
       m_colors->setString(std::to_string(HueMintManager::MIN_COLORS).c_str());
     }
+    onColorsChanged();
   }
 
   void onDecreaseTemp(CCObject *) {
@@ -233,32 +236,21 @@ protected:
 
   void onColorsInput(gd::string input) {
     int value = static_cast<int>(std::strtol(input.c_str(), nullptr, 10));
-    if (value < HueMintManager::MIN_COLORS ||
-        value > HueMintManager::MAX_COLORS)
-      return;
-
-    for (int i = 0; i < HueMintManager::MAX_COLORS; i++) {
-      bool show = i < value;
-      //updateColorsButton(i, show);
-    }
-
+    if (value < HueMintManager::MIN_COLORS || value > HueMintManager::MAX_COLORS) return;
     manager.setMaxColors(value);
-    //m_colorsMenu->updateLayout();
-    //m_lockMenu->updateLayout();
+    onColorsChanged();
   }
 
   void onTemperatureInput(gd::string input) {
     float value = static_cast<float>(std::strtof(input.c_str(), nullptr));
-    if (value < HueMintManager::MIN_TEMPERATURE || value > HueMintManager::MAX_TEMPERATURE)
-      return;
+    if (value < HueMintManager::MIN_TEMPERATURE || value > HueMintManager::MAX_TEMPERATURE) return;
 
     manager.setTemperature(value);
   }
 
   void onResultsInput(gd::string input) {
     int value = static_cast<int>(std::strtol(input.c_str(), nullptr, 10));
-    if (value < HueMintManager::MIN_RESULTS || value > HueMintManager::MAX_RESULTS)
-      return;
+    if (value < HueMintManager::MIN_RESULTS || value > HueMintManager::MAX_RESULTS) return;
 
     manager.setNumResults(value);
   }
