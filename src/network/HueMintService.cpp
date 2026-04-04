@@ -14,7 +14,7 @@ void HueMintService::request(std::function<void(Palette)> onComplete)
 
     m_listener.spawn(req.post(m_url), [this, onComplete](web::WebResponse res) {
       if (res.ok()) {
-        ResponseBody parsed = res.json().unwrap().as<ResponseBody>().unwrap();
+        ResponseBody parsed = res.json().unwrapOrElse([]() { return ResponseBody{}; }).as<ResponseBody>().unwrap();
         PaletteResult result = mapPaletteResult(parsed);
 
         Palette palette = parsed.results.empty() ? Palette{} : parsed.results.at(0);
