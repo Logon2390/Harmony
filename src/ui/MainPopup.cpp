@@ -12,10 +12,12 @@
 #include "../managers/HueMintManager.hpp"
 #include "../network/HueMintService.hpp"
 #include "SettingsPopup.cpp"
+#include "HarmonyPopup.cpp"
 
 #include <Geode/ui/ColorPickPopup.hpp>
-#include <Geode/utils/async.hpp>
 
+#include <Geode/binding/ConfigureValuePopup.hpp>
+#include <Geode/ui/LoadingSpinner.hpp>
 
 using namespace geode::prelude;
 
@@ -34,149 +36,169 @@ public:
 protected:
   HueMintManager &manager = HueMintManager::get();
   HueMintService &service = HueMintService::get();
-  std::array<ColorChannelSprite *, HueMintManager::MAX_COLORS> m_colorChannels;
   std::array<CCMenuItemSpriteExtra *, HueMintManager::MAX_COLORS> m_colorButtons;
-  ButtonSprite* m_generateBtn;
-  CCLabelBMFont* m_infoLabel;
-  
- 
 
-  CCMenu* m_modesMenu;
+  LoadingSpinner* m_spinner = nullptr;
+  CCLabelBMFont* m_infoLabel;
+  CircleButtonSprite* m_generateSpr;
+  CCMenuItemSpriteExtra* m_generate;
+  CCMenuItemSpriteExtra* m_save;
   CCMenu* m_navMenu;
   CCMenu* m_colorsMenu;
-  CCMenu* m_lockMenu;
   bool m_isLoaded = false;
+  int m_colors = 2;
+  int m_swapIndex = -1;
+  const float width = 440.f;
+  const float height = 260.f;
+  const float cropWidth = width - 20.f;
 
   bool init() {
-    if (!Popup::init(440.f, 260.f)) return false;
+    if (!Popup::init(width, height)) return false;
 
     const char *infoIconName = "GJ_infoIcon_001.png";
     const char *backgroundSpriteName = "square02b_001.png";
     const char *bigFontName = "bigFont.fnt";
     const char *goldFontName = "goldFont.fnt";
 
+    m_spinner = LoadingSpinner::create(30.f);
     m_isLoaded = (HueMintService::m_currentPaletteResult.items != 0);
+    m_colors = manager.getRequest().num_colors;
 
-    // initialize color channels
-    for (size_t i = 0; i < HueMintManager::MAX_COLORS; i++) {
-      auto colorSprite = ColorChannelSprite::create();
-      colorSprite->setScale(0.8f);
-      m_colorChannels.at(i) = colorSprite;
-    }
+    auto resetSpr = CircleButtonSprite::create(
+      // @geode-ignore(unknown-resource)
+      CCSprite::createWithSpriteFrameName("geode.loader/reload-gold.png"),
+      CircleBaseColor::Green, CircleBaseSize::Tiny);
 
-    // @geode-ignore(unknown-resource)
-    auto resetBtnSprite = CircleButtonSprite::create(CCSprite::createWithSpriteFrameName("geode.loader/reload-gold.png"),
+    auto folderSpr = CircleButtonSprite::create(
+      CCSprite::createWithSpriteFrameName("gj_folderBtn_001.png"),
+      CircleBaseColor::Green, CircleBaseSize::Tiny);
+
+    auto hideSpr = CircleButtonSprite::create(
+        CCSprite::createWithSpriteFrameName("hideBtn_001.png"),
         CircleBaseColor::Green, CircleBaseSize::Tiny);
 
-    auto saveBtnSprite = CircleButtonSprite::create(
-        CCSprite::createWithSpriteFrameName("gj_folderBtn_001.png"),
-        CircleBaseColor::Green, CircleBaseSize::Tiny);
+    auto infoSpr = CCSprite::createWithSpriteFrameName("GJ_infoBtn_001.png");
+    infoSpr->setScale(0.55f);
 
-    // @geode-ignore(unknown-resource)
-    auto settingsBtnSprite = CircleButtonSprite::create(CCSprite::createWithSpriteFrameName("geode.loader/settings.png"),
-        CircleBaseColor::Green, CircleBaseSize::Tiny);
+    auto settingsSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
+    settingsSpr->setScale(0.55f);
 
     CCMenu *optionsMenu = CCMenu::create(
-        CCMenuItemSpriteExtra::create(resetBtnSprite, this, menu_selector(MainPopup::onReset)),
-        CCMenuItemSpriteExtra::create(saveBtnSprite, this,menu_selector(MainPopup::onSave)),
-        CCMenuItemSpriteExtra::create(settingsBtnSprite, this,menu_selector(MainPopup::onSettings)),
-        nullptr);
+      CCMenuItemSpriteExtra::create(settingsSpr, this,menu_selector(MainPopup::onSettings)),
+      CCMenuItemSpriteExtra::create(folderSpr, this,menu_selector(MainPopup::onSave)),
+      CCMenuItemSpriteExtra::create(resetSpr, this, menu_selector(MainPopup::onReset)),
+      CCMenuItemSpriteExtra::create(hideSpr, this, menu_selector(MainPopup::onHide)),
+      CCMenuItemSpriteExtra::create(infoSpr, this, menu_selector(MainPopup::onInfo)),
+      nullptr);
 
-    m_mainLayer->addChildAtPosition(optionsMenu, Anchor::TopRight,ccp(-20.f, -20.f));
+    RowLayout* mainLayout = RowLayout::create();
+    mainLayout->setGap(0.f)
+      ->setAxisAlignment(AxisAlignment::Center)
+      ->setCrossAxisLineAlignment(AxisAlignment::Center)
+      ->setCrossAxisOverflow(false)
+      ->setAutoScale(false);
+
+    ColumnLayout* optionsLayout = ColumnLayout::create();
+    optionsLayout->setGap(1.f)
+      ->setAxisAlignment(AxisAlignment::Even)
+      ->setCrossAxisLineAlignment(AxisAlignment::Center)
+      ->setCrossAxisOverflow(false)
+      ->setAutoScale(true);
+
+    m_mainLayer->addChildAtPosition(optionsMenu, Anchor::TopRight, ccp(-10.f, -20.f));
     optionsMenu->setAnchorPoint(ccp(1.f, 0.5f));
-    optionsMenu->setContentSize({70.f, 50.f});
-
+    optionsMenu->setContentSize({200.f, 50.f});
     optionsMenu->setLayout(
         RowLayout::create()
             ->setGap(0.5f)
-            ->setAxisAlignment(AxisAlignment::Center)
+            ->setAxisAlignment(AxisAlignment::End)
             ->setCrossAxisLineAlignment(AxisAlignment::Center)
+            ->setAxisReverse(true)
             ->setCrossAxisOverflow(false)
             ->setAutoScale(false));
 
-    CCScale9Sprite *colorsBG = cocos2d::extension::CCScale9Sprite::create(
-        backgroundSpriteName, {0.0f, 0.0f, 80.0f, 80.0f});
-    m_mainLayer->addChildAtPosition(colorsBG, Anchor::Center, ccp(0.f, 50.f));
-    colorsBG->setContentSize({400.f, 50.f});
-    colorsBG->setColor({130, 64, 33});
-    colorsBG->setZOrder(1);
-    colorsBG->setID("colorsBG"_spr);
+    NineSlice* optsBG = NineSlice::create(backgroundSpriteName, {0.0f, 0.0f, 80.0f, 80.0f});
+    m_mainLayer->addChildAtPosition(optsBG, Anchor::Center, ccp(0.f, -10.f));
+    optsBG->setContentSize({420.f, 50.f});
+    optsBG->setColor({130, 64, 33});
+    optsBG->setZOrder(1);
+
+    NineSlice* testModeBG = NineSlice::create(backgroundSpriteName, {0.0f, 0.0f, 80.0f, 80.0f});
+    m_mainLayer->addChildAtPosition(testModeBG, Anchor::Bottom, ccp(0.f, 40.f));
+    testModeBG->setContentSize({cropWidth, 50.f});
+    testModeBG->setColor({130, 64, 33});
+    testModeBG->setZOrder(1);
 
     m_colorsMenu = CCMenu::create();
-    m_colorsMenu->setContentSize(ccp(400.f, 100.f));
-    colorsBG->addChildAtPosition(m_colorsMenu, Anchor::Center, ccp(0.f, -8.f));
-    m_colorsMenu->setLayout(
-        RowLayout::create()
-                ->setGap(0.5f)
-                ->setGrowCrossAxis(true)
-                ->setAxisAlignment(AxisAlignment::Even)
-                ->setCrossAxisLineAlignment(AxisAlignment::Center)
-                ->setCrossAxisOverflow(false)
-                ->setAutoScale(false));
-
-    m_lockMenu = CCMenu::create();
-    m_lockMenu->setContentSize(ccp(400.f, 20.f));
-    colorsBG->addChildAtPosition(m_lockMenu, Anchor::Center, ccp(0.f,15.f));
-    m_lockMenu->setLayout(
-        RowLayout::create()
-            ->setGap(0.5f)
-            ->setGrowCrossAxis(true)
-            ->setAxisAlignment(AxisAlignment::Even)
-            ->setCrossAxisLineAlignment(AxisAlignment::Center)
-            ->setCrossAxisOverflow(false)
-            ->setAutoScale(false));
+    m_colorsMenu->setZOrder(2);
+    m_colorsMenu->setAnchorPoint(ccp(0.5f, 1.f));
+    m_colorsMenu->setContentSize(ccp(cropWidth, 100.f));
+    m_mainLayer->addChildAtPosition(m_colorsMenu, Anchor::Top, ccp(0.f, -40.f));
+    m_colorsMenu->setLayout(mainLayout);
 
     for (size_t i = 0; i < HueMintManager::MAX_COLORS; i++) {
-      auto label = CCLabelBMFont::create((std::to_string(i + 1)).c_str(), bigFontName);
-      auto color = m_colorChannels.at(i);
-      auto item = CCMenuItemSpriteExtra::create(
-          color, this, menu_selector(MainPopup::onColorChannel));
 
-      auto lockSpr = CCSprite::createWithSpriteFrameName("GJ_lock_open_001.png");
-      lockSpr->setScale(0.5f);
-      auto lockBtn = CCMenuItemSpriteExtra::create(lockSpr, lockSpr, this, menu_selector(MainPopup::onLockColorChannel));
-          lockBtn->setUserObject(CCInteger::create(i));
-        
-      m_colorButtons[i] = item;
-      item->addChildAtPosition(label, Anchor::Top, ccp(0.f, -10.f));
-      m_lockMenu->addChild(lockBtn);
+      CCLabelBMFont* label = CCLabelBMFont::create((std::to_string(i + 1)).c_str(), bigFontName);
+      label->setZOrder(3);
+      label->setScale(0.3f);
+
+      CCSprite* lockSpr = CCSprite::createWithSpriteFrameName("GJ_lock_open_001.png");
+      CCMenuItemSpriteExtra* lockBtn = CCMenuItemSpriteExtra::create(lockSpr, this, menu_selector(MainPopup::onLockColorChannel));
+      lockBtn->setID("lock");
+      lockBtn->m_scaleMultiplier = 1.1f;
+
+      CCSprite* infoSpr = CCSprite::createWithSpriteFrameName(infoIconName);
+      CCMenuItemSpriteExtra* infoBtn = CCMenuItemSpriteExtra::create(infoSpr, this, menu_selector(MainPopup::onColorChannelHarmonies));
+      infoBtn->setID("info");
+      infoBtn->m_scaleMultiplier = 1.1f;
+
+      CCSprite* swapSpr = CCSprite::createWithSpriteFrameName("GJ_resetBtn_001.png");
+      CCMenuItemSpriteExtra* swapBtn = CCMenuItemSpriteExtra::create(swapSpr, this, menu_selector(MainPopup::onSwapColorChannel));
+      swapBtn->setID("swap");
+      swapBtn->m_scaleMultiplier = 1.1f;
+
+      CCMenu* colorMenu = CCMenu::create();
+      colorMenu->setID(fmt::format("color-menu-{}", i));
+      colorMenu->setScale(0.6f);
+      colorMenu->setZOrder(3);
+      colorMenu->setContentSize(ccp(20.f, 60.f));
+      colorMenu->setLayout(optionsLayout);
+      colorMenu->addChild(lockBtn);
+      colorMenu->addChild(infoBtn);
+      colorMenu->addChild(swapBtn);
+      colorMenu->updateLayout();
+
+      //init button with a default values, this will be updated in updateUI and loadLastState
+      CCMenuItemSpriteExtra* item = CCMenuItemSpriteExtra::create(createColorSpr(i, 0.f, 0.f), this, menu_selector(MainPopup::onColorChannel));
+      item->m_scaleMultiplier = 1.f;
+      item->setVisible(false);
+      item->addChildAtPosition(label, Anchor::TopRight, ccp(-10.f, -10.f));
+      item->addChildAtPosition(colorMenu, Anchor::Center);
       m_colorsMenu->addChild(item);
-      label->setScale(0.35f);
+
+      m_colorButtons[i] = item;
     }
 
     // updates color channels and buttons based on the current settings
-    for (size_t i = manager.getRequest().num_colors; i < HueMintManager::MAX_COLORS; i++) {
-      updateColorsButton(i, false);
-    }
+    updateUI();
 
-    CCMenu* mainControls = CCMenu::create();
+    CCMenu* mainMenu = CCMenu::create();
+    mainMenu->setContentSize(ccp(400.f, 25.f));
+    mainMenu->setScale(0.8f);
+
     m_navMenu = CCMenu::create();
-
-    mainControls->setContentSize(ccp(400.f, 30.f));
     m_navMenu->setContentSize(ccp(60.f, 30.f));
-    colorsBG->addChildAtPosition(mainControls, Anchor::Center, ccp(0.f, -40.f));
-    colorsBG->addChildAtPosition(m_navMenu, Anchor::Center, ccp(70.f, -40.f));
+    m_navMenu->setScale(0.8f);
 
-    m_navMenu->setLayout(
-        RowLayout::create()
-            ->setGap(5.f)
-            ->setAxisAlignment(AxisAlignment::Center)
-            ->setCrossAxisLineAlignment(AxisAlignment::Center)
-            ->setCrossAxisOverflow(false)
-            ->setAutoScale(true));
+    optsBG->addChildAtPosition(mainMenu, Anchor::Center, ccp(40.f, -12.5f));
+    optsBG->addChildAtPosition(m_navMenu, Anchor::Center, ccp(85.f, -12.5f));
 
-    mainControls->setLayout(
-        RowLayout::create()
-            ->setGap(20.f)
-            ->setAxisAlignment(AxisAlignment::End)
-            ->setCrossAxisLineAlignment(AxisAlignment::Center)
-            ->setCrossAxisOverflow(false)
-            ->setAutoScale(true));
-
-
-    m_generateBtn = ButtonSprite::create("Generate");
-    m_generateBtn->setScale(0.7f);
-
+    m_generateSpr = CircleButtonSprite::create(CCSprite::createWithSpriteFrameName("icon.png"_spr), CircleBaseColor::Cyan, CircleBaseSize::Tiny);
+    m_generate = CCMenuItemSpriteExtra::create(m_generateSpr, this, menu_selector(MainPopup::onGeneratePalette));
+  
+    ButtonSprite* saveSpr = ButtonSprite::create("Save");
+    saveSpr->setScale(0.6f);
+    m_save = CCMenuItemSpriteExtra::create(saveSpr, this, menu_selector(MainPopup::onSave));
 
     CCSprite* prevSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
     CCSprite* nextSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
@@ -190,108 +212,178 @@ protected:
     nextSprite->setScale(0.6f);
     nextSprite->setFlipX(true);
 
-    m_navMenu->addChild(CCMenuItemSpriteExtra::create(m_prev, this, menu_selector(MainPopup::onPrevPalette)));
-    m_navMenu->addChild(CCMenuItemSpriteExtra::create(m_next, this, menu_selector(MainPopup::onNextPalette)));
-    mainControls->addChild(CCMenuItemSpriteExtra::create(m_generateBtn, this, menu_selector(MainPopup::onGeneratePalette)));
+    m_navMenu->addChildAtPosition(CCMenuItemSpriteExtra::create(m_prev, this, menu_selector(MainPopup::onPrevPalette)), Anchor::Center, ccp(70.f, 0.f));
+    m_navMenu->addChildAtPosition(CCMenuItemSpriteExtra::create(m_next, this, menu_selector(MainPopup::onNextPalette)), Anchor::Center, ccp(100.f, 0.f));
+    m_navMenu->addChildAtPosition(m_save, Anchor::Center, ccp(-210.f, 0.f));
+    mainMenu->addChildAtPosition(m_generate, Anchor::Center, ccp(197.5f, 0.f));
 
     m_infoLabel = CCLabelBMFont::create("",bigFontName);
-    m_infoLabel->setScale(0.4f);
+    m_infoLabel->setScale(0.35f);
     m_infoLabel->setAnchorPoint(ccp(0.f, 0.5f));
-    colorsBG->addChildAtPosition(m_infoLabel, Anchor::BottomLeft,ccp(0.f, -10.5f));
+    optsBG->addChildAtPosition(m_infoLabel, Anchor::Left,ccp(10.f, -10.5f));
 
     if (m_isLoaded) loadLastState();
 
     optionsMenu->updateLayout();
+    mainMenu->updateLayout();
     m_colorsMenu->updateLayout();
     m_navMenu->updateLayout();
-    mainControls->updateLayout();
-    m_lockMenu->updateLayout();
     return true;
   }
 
   void loadLastState() {
-    updateColorChannels(
-        HueMintService::m_currentPaletteResult.response.results.at(
-            HueMintService::m_currentPaletteResult.currentItem));
-
+    updateSpritesColor(manager.getCurrentPalette());
     updateInfoLabel();
     updateNavigationButtons();
 
-    for (int i = 0; i < manager.getRequest().num_colors; i++) {
+    for (int i = 0; i < m_colors; i++) {
       updateLockButton(i, manager.isColorLocked(i));
     }
   }
 
+  void onReset(CCObject *) {
+    geode::createQuickPopup(
+      "Reset all colors",
+      "Are you sure you want to reset all colors?",
+      "Cancel", "Reset", [this](auto, bool btn2) {
+        if (btn2) {
+          handleReset();
+        }
+      });
+  }
+
+  void onSave(CCObject *) {
+    ConfigureValuePopup::create(nullptr, 10.f, 0.f, 100.f, "Test", "This is  a test 0", 0)->show();
+  }
+
+
+  void onHide(CCObject *) {
+    handleHide(!isColorMenuVisible());
+  }
+
+  void onInfo(CCObject *) {
+    FLAlertLayer::create(
+        "Info",
+        "HI!",
+        "OK")
+        ->show();
+  }
+
+  void onSettings(CCObject *) {
+    auto settingsPopup = SettingsPopup::create();
+    settingsPopup->show();
+    settingsPopup->onColorsChanged = [this]() {
+      updateUI();
+    };       
+  }
+
   void onColorChannel(CCObject *sender) {
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
-    auto colorSprite =
-        static_cast<ColorChannelSprite *>(item->getNormalImage());
+    auto colorSpr = static_cast<ColorChannelSprite *>(item->getNormalImage());
 
-    auto color = static_cast<ccColor3B>(colorSprite->getColor());
+    if (manager.isColorLocked(ColorSelectPopup::colorToHex(colorSpr->getColor()))) {
+      FLAlertLayer::create("This color is locked", "Unlock this color to edit it.", "OK")->show();
+      return;
+    }
+
+    auto color = static_cast<ccColor3B>(colorSpr->getColor());
     auto popup = ColorSelectPopup::create({0, 0, 0});
-    popup->m_colorPicker->setColorTarget(colorSprite);
+    popup->m_colorPicker->setColorTarget(colorSpr);
     popup->m_colorPicker->setColorValue(color);
     popup->show();
     return;
   }
 
-  void onReset(CCObject *) {
-
-  }
-
-  void onSave(CCObject *) {
-    m_colorChannels.at(0)->getParent();
-  }
-
-  void onSettings(CCObject *) {
-    SettingsPopup::create()->show();
-  }
-
   void onGeneratePalette(CCObject *) {
-    m_generateBtn->setString("Loading...");
+    m_spinner = LoadingSpinner::create(15.f);
+    m_generateSpr->getTopNode()->setVisible(false);
+    m_generate->addChildAtPosition(m_spinner, Anchor::Center);
+    m_generate->setEnabled(false);
+
     service.request([weak = geode::WeakRef(this)](Palette result) {
       if (auto self = weak.lock()) {
+        self->m_spinner->removeFromParent();
+        self->m_spinner = nullptr;
+        self->m_generateSpr->getTopNode()->setVisible(true);
+        self->m_generate->setEnabled(true);
         if (!result.colors.empty()) {
           self->m_isLoaded = true;
-          self->updateColorChannels(result);
+          self->updateSpritesColor(result);
           self->updateInfoLabel();
           self->updateNavigationButtons();
-          self->m_generateBtn->setString("Generate");
         } else {
-          FLAlertLayer::create(
-              "Error", "Failed to generate palette. Please try again.", "OK")
-              ->show();
+          FLAlertLayer::create("Error", "Failed to generate palette. Please try again.", "OK")->show();
         }
       }
     });
   }
 
   void onNextPalette(CCObject *) {
-    updateColorChannels(manager.getNextPalette());
+    updateSpritesColor(manager.getNextPalette());
     updateInfoLabel();
   }
 
   void onPrevPalette(CCObject *) {
-    updateColorChannels(manager.getPrevPalette());
+    updateSpritesColor(manager.getPrevPalette());
     updateInfoLabel();
   }
 
-
-
   void onLockColorChannel(CCObject *sender) {
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
-    int index = static_cast<CCInteger *>(item->getUserObject())->getValue();
-    auto color = m_colorChannels.at(index)->getColor();
+    auto menu = static_cast<CCMenu *>(item->getParent());
+    auto result = getIndexFromID(menu->getID());
 
-    manager.toggleColorLock(index, ColorSelectPopup::colorToHex(color));
-    updateLockButton(index, manager.isColorLocked(index));
+    if (result.ok()) {
+      int index = result.unwrap();
+
+      NineSlice * colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
+      manager.toggleColorLock(index, ColorSelectPopup::colorToHex(colorSpr->getColor()));
+      updateLockButton(index, manager.isColorLocked(index));
+    }
   }
 
-  void updateColorChannels(Palette palette) {
+  void onSwapColorChannel(CCObject *sender) {
+      auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
+      auto menu = static_cast<CCMenu *>(item->getParent());
+      auto result = getIndexFromID(menu->getID());
+
+      if (result.ok()) {
+        int index = result.unwrap();
+        if (manager.isColorLocked(index)) {
+          FLAlertLayer::create("This color is locked", "Unlock this color to swap it.", "OK")->show();
+          return;
+        }
+
+        if (m_swapIndex == -1) {
+          //TODO: change the color of the button sprite to indicate that it's selected
+          m_swapIndex = index;
+          Notification::create("Select a color to swap with", NotificationIcon::Success)->show();
+          return;
+        }
+
+        manager.swapColors(m_swapIndex, index);
+        updateSpritesColor(manager.getCurrentPalette());
+        m_swapIndex = -1;
+      }
+    
+  }
+
+  void onColorChannelHarmonies(CCObject *sender) {
+    auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
+    auto menu = static_cast<CCMenu *>(item->getParent());
+    auto result = getIndexFromID(menu->getID());
+
+    if (result.ok()) {
+      int index = result.unwrap();
+      auto colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
+      HarmonyPopup::create(colorSpr->getColor())->show();
+    }
+  }
+
+  void updateSpritesColor(Palette palette) {
     for (size_t i = 0; i < palette.colors.size(); i++) {
-      std::string hexColor = palette.colors.at(i);
-      hexColor.erase(0, 1); // Removes the '#' character
-      m_colorChannels.at(i)->setColor(ColorSelectPopup::hexToColor(hexColor));
+      NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons[i]->getNormalImage());
+      applyColorToSprite(colorSpr, palette.colors.at(i));
     }
   }
 
@@ -303,16 +395,19 @@ protected:
             .c_str());
   }
 
-  void updateColorsButton(int index, bool show) {
+  void updateColorButton(int index) {
+    bool isVisible = index < m_colors;
     CCMenuItemSpriteExtra *btn = m_colorButtons[index];
-    CCMenuItemSpriteExtra *lockBtn = static_cast<CCMenuItemSpriteExtra *>(m_lockMenu->getChildByIndex(index));
-    btn->setVisible(show);
-    lockBtn->setVisible(show);
+    CCSize size = {cropWidth / m_colors, 100.f};
 
-    if (!show) {
-      updateLockButton(index, false);
-      m_colorChannels.at(index)->setColor({255, 255, 255});
-    }
+    btn->setNormalImage(createColorSpr(index, size.width, size.height));
+    btn->setContentSize(size);
+    btn->setVisible(isVisible);
+    btn->updateSprite();
+    btn->updateLayout();
+
+    //sync visibility of the color menu with the color button
+    handleHide(isColorMenuVisible());
   }
 
   void updateNavigationButtons() {
@@ -321,29 +416,74 @@ protected:
   }
 
   void updateLockButton(int index, bool locked) {
-    auto lockBtn = static_cast<CCMenuItemSpriteExtra *>(m_lockMenu->getChildByIndex(index));
+    CCMenuItemSpriteExtra * color = m_colorButtons[index];
+    CCMenuItemSpriteExtra * lockBtn = static_cast<CCMenuItemSpriteExtra *>(color->getChildByIDRecursive("lock"));
+
     const char *frame = locked ? "GJ_lock_001.png" : "GJ_lock_open_001.png";
     static_cast<CCSprite *>(lockBtn->getNormalImage())->setDisplayFrame(
         CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frame));
   }
 
+    void updateUI() {
+    m_colors = manager.getRequest().num_colors;
+    for (int i = 0; i < HueMintManager::MAX_COLORS; i++) {
+      updateColorButton(i);
+      updateLockButton(i, manager.isColorLocked(i));
+    }
 
+    updateSpritesColor(manager.getCurrentPalette());
+    m_colorsMenu->updateLayout();
+  }
 
   void handleReset() {
     m_isLoaded = false;
-    manager.reset();
     service.resetPalette();
     updateNavigationButtons();
-    //updateFields();
 
     for (int i = 0; i < HueMintManager::MAX_COLORS; i++) {
-      m_colorChannels.at(i)->setColor({255, 255, 255});
+      NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons[i]->getNormalImage());
+      colorSpr->setColor({255, 255, 255});
       updateLockButton(i, false);
-      updateColorsButton(i, i < manager.getRequest().num_colors);
+      updateColorButton(i);
     }
-    m_infoLabel->setString("");
 
+    m_infoLabel->setString("");
     m_colorsMenu->updateLayout();
-    m_lockMenu->updateLayout();
+  }
+
+  void handleHide(bool show) {
+    for (int i = 0; i < m_colors; i++) {
+      CCMenu *menu = static_cast<CCMenu *>(m_colorButtons[i]->getChildByID(fmt::format("color-menu-{}", i)));
+      if (menu)menu->setVisible(show);
+    }
+  }
+
+  bool isColorMenuVisible() {
+    CCMenu *menu = static_cast<CCMenu *>(m_colorButtons[0]->getChildByID(fmt::format("color-menu-{}", 0)));
+    return menu ? menu->isVisible() : false;
+  }
+
+  geode::Result<int> getIndexFromID(std::string id) {
+    std::string_view numStr = std::string_view(id).substr(id.rfind('-') + 1);
+    return geode::utils::numFromString<int>(numStr);
+  }
+
+  NineSlice* createColorSpr(int index, float width, float height, std::string hex = "#FFFFFF") {
+    bool isCorner = (index == 0 || index == m_colors - 1);
+    const char* spriteName = isCorner ? "square02b_001.png" : "square.png";
+    CCRect rect = isCorner ? CCRect{0, 0, 50, 80} : CCRect{0, 0, 80, 80};
+
+    NineSlice* colorSpr = NineSlice::create(spriteName, rect);
+    colorSpr->setRotation(isCorner && index == m_colors - 1 ? 180.f : 0.f);
+    colorSpr->setContentSize({width, height});
+    applyColorToSprite(colorSpr, hex);
+    return colorSpr;
+  }
+
+  void applyColorToSprite(NineSlice* sprite, std::string hex = "#FFFFFF") {
+    hex = hex.length() == 7 ? hex : "#FFFFFF"; // Fallback to white if the hex code is invalid
+    hex.erase(0, 1); // Removes the '#' character
+    sprite->setColor(ColorSelectPopup::hexToColor(hex));
   }
 };
+
