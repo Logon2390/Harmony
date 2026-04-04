@@ -119,6 +119,7 @@ public:
     return instance;
   }
 
+  Palette& getCurrentPalette();
   Palette getNextPalette();
   Palette getPrevPalette();
   std::string setMode(bool next);
@@ -128,10 +129,13 @@ public:
   void setTemperature(float temperature);
   void toggleColorLock(int index, std::string colorHex);
   bool isColorLocked(int index);
+  bool isColorLocked(std::string colorHex);
+  void swapColors(int indexFrom, int indexTo);
   void reset();
   const RequestBody &getRequest() const;
 
 private:
+    Palette defaultPalette;
     RequestBody m_request;
     std::array<std::string, 3> m_modes;
     std::array<std::string, 7> m_presets;
@@ -148,8 +152,9 @@ private:
         .palette = {"-", "-", "-", "-"}};
 
     HueMintManager() {
-      m_modes = {"transformer", "diffusion", "random"};
-      m_presets = {"default", "high-contrast", "bright-light", "pastel", "vibrant", "dark", "hyper-color"};
-      m_request = m_defaultRequest;
+        defaultPalette = {{"#03045E", "#023E8A", "#0077B6", "#0096C7", "#00B4D8", "#48CAE4", "#90E0EF", "#ADE8F4", "#CAF0F8", "#CFF1F9", "#DBF4FA", "#FFFFFF"}, 0.f};
+        m_modes = {"transformer", "diffusion", "random"};
+        m_presets = {"default", "high-contrast", "bright-light", "pastel", "vibrant", "dark", "hyper-color"};
+        m_request = m_defaultRequest;
     }
   };

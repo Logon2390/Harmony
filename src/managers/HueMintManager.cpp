@@ -1,6 +1,16 @@
 #include "HueMintManager.hpp"
 #include "../network/HueMintService.hpp"
 
+Palette &HueMintManager::getCurrentPalette() {
+
+  if (HueMintService::m_currentPaletteResult.items == 0) {
+    return defaultPalette;
+  }
+
+  int currentIndex = HueMintService::m_currentPaletteResult.currentItem;
+  return HueMintService::m_currentPaletteResult.response.results.at(currentIndex);
+}
+
 Palette HueMintManager::getNextPalette()
 {
     int currentIndex = HueMintService::m_currentPaletteResult.currentItem;
@@ -72,7 +82,8 @@ void HueMintManager::setMaxColors(int numColors)
     }
 }
 
-void HueMintManager::setNumResults(int numResults) {
+void HueMintManager::setNumResults(int numResults) 
+{
     if (numResults < 5) numResults = 5;
     if (numResults > 50) numResults = 50;
 
@@ -84,7 +95,8 @@ void HueMintManager::setNumResults(int numResults) {
     m_request.num_results = numResults;
 }
 
-void HueMintManager::setTemperature(float temperature) {
+void HueMintManager::setTemperature(float temperature) 
+{
     if (temperature < 0) temperature = 0;
     if (temperature > 2.4) temperature = 2.4;
 
@@ -93,13 +105,30 @@ void HueMintManager::setTemperature(float temperature) {
 
 void HueMintManager::toggleColorLock(int index, std::string colorHex) 
 {
+    if (index < 0 || index >= m_request.num_colors) return;
     colorHex = "#" + colorHex;
     m_request.palette.at(index) = isColorLocked(index) ? "-" : colorHex;
 }
 
 bool HueMintManager::isColorLocked(int index) 
 {
+    if (index < 0 || index >= m_request.num_colors) return false;
     return m_request.palette.at(index) != "-";
+}
+
+bool HueMintManager::isColorLocked(std::string colorHex) 
+{
+    colorHex = "#" + colorHex;
+    return std::find(m_request.palette.begin(), m_request.palette.end(), colorHex) != m_request.palette.end();
+}
+
+void HueMintManager::swapColors(int indexFrom, int indexTo) 
+{
+    if (indexFrom < 0 || indexFrom >= m_request.num_colors) return;
+    if (indexTo < 0 || indexTo >= m_request.num_colors) return;
+    if (indexFrom == indexTo) return;
+
+    std::swap(getCurrentPalette().colors.at(indexFrom), getCurrentPalette().colors.at(indexTo));
 }
 
 void HueMintManager::reset() 
