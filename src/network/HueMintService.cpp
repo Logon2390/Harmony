@@ -1,8 +1,8 @@
 #include "HueMintService.hpp"
-#include "../managers/HueMintManager.hpp"
+#include "../managers/SettingsManager.hpp"
 
 PaletteResult HueMintService::m_currentPaletteResult{};
-HueMintManager &manager = HueMintManager::get();
+SettingsManager &manager = SettingsManager::get();
 
 void HueMintService::request(std::function<void(Palette)> onComplete)
 {

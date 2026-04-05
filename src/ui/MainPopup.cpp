@@ -9,7 +9,7 @@
 #include <Geode/ui/BasedButtonSprite.hpp>
 #include <Geode/ui/Layout.hpp>
 
-#include "../managers/HueMintManager.hpp"
+#include "../managers/SettingsManager.hpp"
 #include "../network/HueMintService.hpp"
 #include "SettingsPopup.cpp"
 #include "HarmonyPopup.cpp"
@@ -34,9 +34,9 @@ public:
   }
 
 protected:
-  HueMintManager &manager = HueMintManager::get();
+  SettingsManager &manager = SettingsManager::get();
   HueMintService &service = HueMintService::get();
-  std::array<CCMenuItemSpriteExtra *, HueMintManager::MAX_COLORS> m_colorButtons;
+  std::array<CCMenuItemSpriteExtra *, SettingsManager::MAX_COLORS> m_colorButtons;
 
   LoadingSpinner* m_spinner = nullptr;
   CCLabelBMFont* m_infoLabel;
@@ -136,7 +136,7 @@ protected:
     m_mainLayer->addChildAtPosition(m_colorsMenu, Anchor::Top, ccp(0.f, -40.f));
     m_colorsMenu->setLayout(mainLayout);
 
-    for (size_t i = 0; i < HueMintManager::MAX_COLORS; i++) {
+    for (size_t i = 0; i < SettingsManager::MAX_COLORS; i++) {
 
       CCLabelBMFont* label = CCLabelBMFont::create((std::to_string(i + 1)).c_str(), bigFontName);
       label->setZOrder(3);
@@ -357,7 +357,7 @@ protected:
         if (m_swapIndex == -1) {
           //TODO: change the color of the button sprite to indicate that it's selected
           m_swapIndex = index;
-          Notification::create("Select a color to swap with", NotificationIcon::Success)->show();
+          Notification::create("Select a color to swap with", NotificationIcon::Info)->show();
           return;
         }
 
@@ -424,9 +424,9 @@ protected:
         CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frame));
   }
 
-    void updateUI() {
+  void updateUI() {
     m_colors = manager.getRequest().num_colors;
-    for (int i = 0; i < HueMintManager::MAX_COLORS; i++) {
+    for (int i = 0; i < SettingsManager::MAX_COLORS; i++) {
       updateColorButton(i);
       updateLockButton(i, manager.isColorLocked(i));
     }
@@ -440,7 +440,7 @@ protected:
     service.resetPalette();
     updateNavigationButtons();
 
-    for (int i = 0; i < HueMintManager::MAX_COLORS; i++) {
+    for (int i = 0; i < SettingsManager::MAX_COLORS; i++) {
       NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons[i]->getNormalImage());
       colorSpr->setColor({255, 255, 255});
       updateLockButton(i, false);

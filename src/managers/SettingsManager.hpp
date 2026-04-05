@@ -106,7 +106,7 @@ struct matjson::Serialize<ResponseBody>
     }
 };
 
-class HueMintManager {
+class SettingsManager {
 public:
   static constexpr int MAX_COLORS = 12;
   static constexpr int MIN_COLORS = 2;
@@ -114,8 +114,8 @@ public:
   static constexpr float MIN_TEMPERATURE = 0.f;
   static constexpr int MAX_RESULTS = 50;
   static constexpr int MIN_RESULTS = 5;
-  static HueMintManager &get() {
-    static HueMintManager instance;
+  static SettingsManager &get() {
+    static SettingsManager instance;
     return instance;
   }
 
@@ -151,7 +151,7 @@ private:
         //"0", "35", "35", "65","35", "0"},
         .palette = {"-", "-", "-", "-"}};
 
-    HueMintManager() {
+    SettingsManager() {
         defaultPalette = {{"#03045E", "#023E8A", "#0077B6", "#0096C7", "#00B4D8", "#48CAE4", "#90E0EF", "#ADE8F4", "#CAF0F8", "#CFF1F9", "#DBF4FA", "#FFFFFF"}, 0.f};
         m_modes = {"transformer", "diffusion", "random"};
         m_presets = {"default", "high-contrast", "bright-light", "pastel", "vibrant", "dark", "hyper-color"};

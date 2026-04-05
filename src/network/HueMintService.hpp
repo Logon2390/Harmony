@@ -2,7 +2,7 @@
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/utils/web.hpp>
 #include <Geode/loader/Event.hpp>
-#include "../managers/HueMintManager.hpp"
+#include "../managers/SettingsManager.hpp"
 
 using namespace geode::prelude;
 

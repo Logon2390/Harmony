@@ -1,7 +1,7 @@
-#include "HueMintManager.hpp"
+#include "SettingsManager.hpp"
 #include "../network/HueMintService.hpp"
 
-Palette &HueMintManager::getCurrentPalette() {
+Palette &SettingsManager::getCurrentPalette() {
 
   if (HueMintService::m_currentPaletteResult.items == 0) {
     return defaultPalette;
@@ -11,7 +11,7 @@ Palette &HueMintManager::getCurrentPalette() {
   return HueMintService::m_currentPaletteResult.response.results.at(currentIndex);
 }
 
-Palette HueMintManager::getNextPalette()
+Palette SettingsManager::getNextPalette()
 {
     int currentIndex = HueMintService::m_currentPaletteResult.currentItem;
     int nextIndex = currentIndex + 1;
@@ -23,7 +23,7 @@ Palette HueMintManager::getNextPalette()
     return HueMintService::m_currentPaletteResult.response.results.at(nextIndex);
 }
 
-Palette HueMintManager::getPrevPalette()
+Palette SettingsManager::getPrevPalette()
 {
     int currentIndex = HueMintService::m_currentPaletteResult.currentItem;
     int prevIndex = currentIndex - 1;
@@ -35,7 +35,7 @@ Palette HueMintManager::getPrevPalette()
     return HueMintService::m_currentPaletteResult.response.results.at(prevIndex);
 }
 
-std::string HueMintManager::setMode(bool next) 
+std::string SettingsManager::setMode(bool next) 
 {
     auto it = std::find(m_modes.begin(), m_modes.end(), m_request.mode);
     size_t index = (it == m_modes.end()) ? 0 : std::distance(m_modes.begin(), it);
@@ -48,7 +48,7 @@ std::string HueMintManager::setMode(bool next)
     return m_request.mode;
 }
 
-std::string HueMintManager::setPreset(bool next)
+std::string SettingsManager::setPreset(bool next)
 {
     auto it = std::find(m_presets.begin(), m_presets.end(), m_request.preset);
     size_t index = (it == m_presets.end()) ? 0 : std::distance(m_presets.begin(), it);
@@ -61,7 +61,7 @@ std::string HueMintManager::setPreset(bool next)
     return m_request.preset;
 }
 
-void HueMintManager::setMaxColors(int numColors) 
+void SettingsManager::setMaxColors(int numColors) 
 {
     if (numColors < 2) numColors = 2;
     if (numColors > 12) numColors = 12;
@@ -82,7 +82,7 @@ void HueMintManager::setMaxColors(int numColors)
     }
 }
 
-void HueMintManager::setNumResults(int numResults) 
+void SettingsManager::setNumResults(int numResults) 
 {
     if (numResults < 5) numResults = 5;
     if (numResults > 50) numResults = 50;
@@ -95,7 +95,7 @@ void HueMintManager::setNumResults(int numResults)
     m_request.num_results = numResults;
 }
 
-void HueMintManager::setTemperature(float temperature) 
+void SettingsManager::setTemperature(float temperature) 
 {
     if (temperature < 0) temperature = 0;
     if (temperature > 2.4) temperature = 2.4;
@@ -103,26 +103,26 @@ void HueMintManager::setTemperature(float temperature)
     m_request.temperature = temperature;
 }
 
-void HueMintManager::toggleColorLock(int index, std::string colorHex) 
+void SettingsManager::toggleColorLock(int index, std::string colorHex) 
 {
     if (index < 0 || index >= m_request.num_colors) return;
     colorHex = "#" + colorHex;
     m_request.palette.at(index) = isColorLocked(index) ? "-" : colorHex;
 }
 
-bool HueMintManager::isColorLocked(int index) 
+bool SettingsManager::isColorLocked(int index) 
 {
     if (index < 0 || index >= m_request.num_colors) return false;
     return m_request.palette.at(index) != "-";
 }
 
-bool HueMintManager::isColorLocked(std::string colorHex) 
+bool SettingsManager::isColorLocked(std::string colorHex) 
 {
     colorHex = "#" + colorHex;
     return std::find(m_request.palette.begin(), m_request.palette.end(), colorHex) != m_request.palette.end();
 }
 
-void HueMintManager::swapColors(int indexFrom, int indexTo) 
+void SettingsManager::swapColors(int indexFrom, int indexTo) 
 {
     if (indexFrom < 0 || indexFrom >= m_request.num_colors) return;
     if (indexTo < 0 || indexTo >= m_request.num_colors) return;
@@ -131,9 +131,9 @@ void HueMintManager::swapColors(int indexFrom, int indexTo)
     std::swap(getCurrentPalette().colors.at(indexFrom), getCurrentPalette().colors.at(indexTo));
 }
 
-void HueMintManager::reset() 
+void SettingsManager::reset() 
 {
     m_request = m_defaultRequest;
 }
 
-const RequestBody &HueMintManager::getRequest() const { return m_request; }
+const RequestBody &SettingsManager::getRequest() const { return m_request; }

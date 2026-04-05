@@ -1,6 +1,6 @@
 #include <Geode/ui/NineSlice.hpp>
 #include <Geode/ui/TextInput.hpp>
-#include "../managers/HueMintManager.hpp"
+#include "../managers/SettingsManager.hpp"
 #include "../network/HueMintService.hpp"
 
 using namespace geode::prelude;
@@ -19,7 +19,7 @@ public:
   }
 
 protected:
-  HueMintManager &manager = HueMintManager::get();
+  SettingsManager &manager = SettingsManager::get();
   HueMintService &service = HueMintService::get();
   CCLabelBMFont *m_mode;
   CCLabelBMFont *m_preset;
@@ -168,89 +168,89 @@ protected:
 
   void onDecreaseColors(CCObject *) {
     int current = manager.getRequest().num_colors;
-    if (current > HueMintManager::MIN_COLORS) {
+    if (current > SettingsManager::MIN_COLORS) {
       manager.setMaxColors(current - 1);
       m_colors->setString(std::to_string(current - 1).c_str());
     } else {
-      manager.setMaxColors(HueMintManager::MAX_COLORS);
-      m_colors->setString(std::to_string(HueMintManager::MAX_COLORS).c_str());
+      manager.setMaxColors(SettingsManager::MAX_COLORS);
+      m_colors->setString(std::to_string(SettingsManager::MAX_COLORS).c_str());
     }
     onColorsChanged();
   }
 
   void onIncreaseColors(CCObject *) {
     int current = manager.getRequest().num_colors;
-    if (current < HueMintManager::MAX_COLORS) {
+    if (current < SettingsManager::MAX_COLORS) {
       manager.setMaxColors(current + 1);
       m_colors->setString(std::to_string(current + 1).c_str());
     } else {
-      manager.setMaxColors(HueMintManager::MIN_COLORS);
-      m_colors->setString(std::to_string(HueMintManager::MIN_COLORS).c_str());
+      manager.setMaxColors(SettingsManager::MIN_COLORS);
+      m_colors->setString(std::to_string(SettingsManager::MIN_COLORS).c_str());
     }
     onColorsChanged();
   }
 
   void onDecreaseTemp(CCObject *) {
     float current = manager.getRequest().temperature;
-    if (current > HueMintManager::MIN_TEMPERATURE) {
+    if (current > SettingsManager::MIN_TEMPERATURE) {
       manager.setTemperature(current - 0.1f);
       m_temperature->setString(std::to_string(current - 0.1f).erase(3).c_str());
     } else {
-      manager.setTemperature(HueMintManager::MAX_TEMPERATURE);
-      m_temperature->setString(std::to_string(HueMintManager::MAX_TEMPERATURE).c_str());
+      manager.setTemperature(SettingsManager::MAX_TEMPERATURE);
+      m_temperature->setString(std::to_string(SettingsManager::MAX_TEMPERATURE).c_str());
     }
   }
 
   void onIncreaseTemp(CCObject *) {
     float current = manager.getRequest().temperature;
-    if (current < HueMintManager::MAX_TEMPERATURE) {
+    if (current < SettingsManager::MAX_TEMPERATURE) {
       manager.setTemperature(current + 0.1f);
       m_temperature->setString(std::to_string(current + 0.1f).erase(3).c_str());
     } else {
-      manager.setTemperature(HueMintManager::MIN_TEMPERATURE);
-      m_temperature->setString(std::to_string(HueMintManager::MIN_TEMPERATURE).c_str());
+      manager.setTemperature(SettingsManager::MIN_TEMPERATURE);
+      m_temperature->setString(std::to_string(SettingsManager::MIN_TEMPERATURE).c_str());
     }
   }
 
   void onDecreaseResults(CCObject *) {
     int current = static_cast<int>(std::strtol(m_results->getString().c_str(), nullptr, 10));
-    if (current > HueMintManager::MIN_RESULTS) {
+    if (current > SettingsManager::MIN_RESULTS) {
       manager.setNumResults(current - 1);
       m_results->setString(std::to_string(current - 1).c_str());
     } else {
-      manager.setNumResults(HueMintManager::MAX_RESULTS);
-      m_results->setString(std::to_string(HueMintManager::MAX_RESULTS).c_str());
+      manager.setNumResults(SettingsManager::MAX_RESULTS);
+      m_results->setString(std::to_string(SettingsManager::MAX_RESULTS).c_str());
     }
   }
 
   void onIncreaseResults(CCObject *) {
     int current = static_cast<int>(std::strtol(m_results->getString().c_str(), nullptr, 10));
-    if (current < HueMintManager::MAX_RESULTS) {
+    if (current < SettingsManager::MAX_RESULTS) {
       manager.setNumResults(current + 1);
       m_results->setString(std::to_string(current + 1).c_str());
     } else {
-      manager.setNumResults(HueMintManager::MIN_RESULTS);
-      m_results->setString(std::to_string(HueMintManager::MIN_RESULTS).c_str());
+      manager.setNumResults(SettingsManager::MIN_RESULTS);
+      m_results->setString(std::to_string(SettingsManager::MIN_RESULTS).c_str());
     }
   }
 
   void onColorsInput(gd::string input) {
     int value = static_cast<int>(std::strtol(input.c_str(), nullptr, 10));
-    if (value < HueMintManager::MIN_COLORS || value > HueMintManager::MAX_COLORS) return;
+    if (value < SettingsManager::MIN_COLORS || value > SettingsManager::MAX_COLORS) return;
     manager.setMaxColors(value);
     onColorsChanged();
   }
 
   void onTemperatureInput(gd::string input) {
     float value = static_cast<float>(std::strtof(input.c_str(), nullptr));
-    if (value < HueMintManager::MIN_TEMPERATURE || value > HueMintManager::MAX_TEMPERATURE) return;
+    if (value < SettingsManager::MIN_TEMPERATURE || value > SettingsManager::MAX_TEMPERATURE) return;
 
     manager.setTemperature(value);
   }
 
   void onResultsInput(gd::string input) {
     int value = static_cast<int>(std::strtol(input.c_str(), nullptr, 10));
-    if (value < HueMintManager::MIN_RESULTS || value > HueMintManager::MAX_RESULTS) return;
+    if (value < SettingsManager::MIN_RESULTS || value > SettingsManager::MAX_RESULTS) return;
 
     manager.setNumResults(value);
   }

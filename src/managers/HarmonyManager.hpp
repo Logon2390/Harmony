@@ -1,5 +1,5 @@
 # pragma once
-#include "HueMintManager.hpp"
+#include "SettingsManager.hpp"
 
 using namespace geode::prelude;
 class HarmonyManager {
