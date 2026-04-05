@@ -12,7 +12,6 @@ class $modify(MyEditorUI, EditorUI) {
 
     struct Fields {
         CCMenuItemSpriteExtra* mainBtn;
-        CCMenuItemSpriteExtra* harmonyBtn;
     };
 
     bool init(LevelEditorLayer* layer) {
@@ -23,16 +22,10 @@ class $modify(MyEditorUI, EditorUI) {
         m_fields->mainBtn->setContentSize(ccp(40.f, 40.f));
         m_fields->mainBtn->setID("harmony-button"_spr);
 
-        auto harmonySpr = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"), EditorBaseColor::LightBlue);
-        m_fields->harmonyBtn = CCMenuItemSpriteExtra::create(harmonySpr, this, menu_selector(MyEditorUI::onHarmonyPopup));
-        m_fields->harmonyBtn->setContentSize(ccp(40.f, 40.f));
-        m_fields->harmonyBtn->setID("harmony-info-button"_spr);
-
         auto menu = this->getChildByID("editor-buttons-menu");
 
         if (menu != nullptr) {
             menu->addChild(m_fields->mainBtn);
-            menu->addChild(m_fields->harmonyBtn);
             menu->updateLayout();
         }
 
@@ -50,7 +43,6 @@ class $modify(MyEditorUI, EditorUI) {
 
     void showUI(bool show) {
         m_fields->mainBtn->setVisible(show);
-        m_fields->harmonyBtn->setVisible(show);
 		return EditorUI::showUI(show);
     }
 };
