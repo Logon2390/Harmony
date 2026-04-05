@@ -95,10 +95,8 @@ protected:
       auto color = colorSpr->getColor();
 
       auto popup = ColorSelectPopup::create(color);
-      popup->m_colorPicker->setColorTarget(colorSpr);
       popup->m_colorPicker->setColorValue(color);
-      popup->show();
-      
-      popup->setZOrder(110);
+      popup->onCopy(sender);
+      Notification::create("Color copied!", NotificationIcon::Success)->show();
     }
 };
