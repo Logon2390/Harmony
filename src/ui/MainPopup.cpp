@@ -1,23 +1,10 @@
-#include <GUI/CCControlExtension/CCScale9Sprite.h>
-#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
-#include <Geode/binding/ColorAction.hpp>
-#include <Geode/binding/ColorSelectPopup.hpp>
-#include <Geode/cocos/label_nodes/CCLabelBMFont.h>
-#include <Geode/cocos/menu_nodes/CCMenu.h>
-#include <Geode/cocos/support/CCPointExtension.h>
-#include <Geode/loader/Mod.hpp>
-#include <Geode/ui/BasedButtonSprite.hpp>
-#include <Geode/ui/Layout.hpp>
-
 #include "../managers/SettingsManager.hpp"
+#include "../managers/DataManager.hpp"
 #include "../network/HueMintService.hpp"
+#include "../utils/ColorUtils.hpp"
 #include "SettingsPopup.cpp"
 #include "HarmonyPopup.cpp"
-
-#include <Geode/ui/ColorPickPopup.hpp>
-
-#include <Geode/binding/ConfigureValuePopup.hpp>
-#include <Geode/ui/LoadingSpinner.hpp>
+#include "SavedPopup.cpp"
 
 using namespace geode::prelude;
 
@@ -34,10 +21,12 @@ public:
   }
 
 protected:
+  ColorUtils &utils = ColorUtils::get();
+  DataManager &data = DataManager::get();
   SettingsManager &manager = SettingsManager::get();
   HueMintService &service = HueMintService::get();
   std::array<CCMenuItemSpriteExtra *, SettingsManager::MAX_COLORS> m_colorButtons;
-
+  TextInput* m_nameInput;
   LoadingSpinner* m_spinner = nullptr;
   CCLabelBMFont* m_infoLabel;
   CircleButtonSprite* m_generateSpr;
@@ -182,6 +171,16 @@ protected:
     // updates color channels and buttons based on the current settings
     updateUI();
 
+    m_nameInput = TextInput::create(150.f, "Palette name", goldFontName);
+    m_nameInput->setString("Palette name");
+    m_nameInput->setCommonFilter(CommonFilter::Name);
+    m_nameInput->setMaxCharCount(25);
+    m_nameInput->setTextAlign(TextInputAlign::Left);
+    m_nameInput->setAnchorPoint({0.f, 0.5f});
+    m_nameInput->setScale(0.7f);
+    m_nameInput->hideBG();
+    m_mainLayer->addChildAtPosition(m_nameInput, Anchor::TopLeft, ccp(10.f, -30.f));
+
     CCMenu* mainMenu = CCMenu::create();
     mainMenu->setContentSize(ccp(400.f, 25.f));
     mainMenu->setScale(0.8f);
@@ -198,7 +197,7 @@ protected:
   
     ButtonSprite* saveSpr = ButtonSprite::create("Save");
     saveSpr->setScale(0.6f);
-    m_save = CCMenuItemSpriteExtra::create(saveSpr, this, menu_selector(MainPopup::onSave));
+    m_save = CCMenuItemSpriteExtra::create(saveSpr, this, menu_selector(MainPopup::onSavePalette));
 
     CCSprite* prevSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
     CCSprite* nextSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
@@ -253,9 +252,8 @@ protected:
   }
 
   void onSave(CCObject *) {
-    ConfigureValuePopup::create(nullptr, 10.f, 0.f, 100.f, "Test", "This is  a test 0", 0)->show();
+    SavedPopup::create()->show();
   }
-
 
   void onHide(CCObject *) {
     handleHide(!isColorMenuVisible());
@@ -281,7 +279,7 @@ protected:
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
     auto colorSpr = static_cast<ColorChannelSprite *>(item->getNormalImage());
 
-    if (manager.isColorLocked(ColorSelectPopup::colorToHex(colorSpr->getColor()))) {
+    if (manager.isColorLocked(utils.colorToHex(colorSpr->getColor()))) {
       FLAlertLayer::create("This color is locked", "Unlock this color to edit it.", "OK")->show();
       return;
     }
@@ -308,6 +306,7 @@ protected:
         self->m_generate->setEnabled(true);
         if (!result.colors.empty()) {
           self->m_isLoaded = true;
+          self->data.clearSaved();
           self->updateSpritesColor(result);
           self->updateInfoLabel();
           self->updateNavigationButtons();
@@ -318,14 +317,24 @@ protected:
     });
   }
 
+  void onSavePalette(CCObject *) {
+    data.create(manager.getCurrentPalette(), m_nameInput->getString());
+    data.setSaved(HueMintService::m_currentPaletteResult.currentItem);
+    updateSaveButton();
+
+    Notification::create("Palette saved", NotificationIcon::Success)->show();
+  }
+
   void onNextPalette(CCObject *) {
     updateSpritesColor(manager.getNextPalette());
     updateInfoLabel();
+    updateSaveButton();
   }
 
   void onPrevPalette(CCObject *) {
     updateSpritesColor(manager.getPrevPalette());
     updateInfoLabel();
+    updateSaveButton();
   }
 
   void onLockColorChannel(CCObject *sender) {
@@ -337,7 +346,7 @@ protected:
       int index = result.unwrap();
 
       NineSlice * colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
-      manager.toggleColorLock(index, ColorSelectPopup::colorToHex(colorSpr->getColor()));
+      manager.toggleColorLock(index, utils.colorToHex(colorSpr->getColor()));
       updateLockButton(index, manager.isColorLocked(index));
     }
   }
@@ -365,8 +374,7 @@ protected:
         updateSpritesColor(manager.getCurrentPalette());
         m_swapIndex = -1;
       }
-    
-  }
+    }
 
   void onColorChannelHarmonies(CCObject *sender) {
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
@@ -463,6 +471,14 @@ protected:
     return menu ? menu->isVisible() : false;
   }
 
+  void updateSaveButton() {
+    bool isSaved = data.isSaved(HueMintService::m_currentPaletteResult.currentItem);
+    ButtonSprite* saveSpr = static_cast<ButtonSprite*>(m_save->getNormalImage());
+    saveSpr->setString(isSaved ? "Saved" : "Save");
+    saveSpr->updateBGImage(isSaved ? "GJ_button_02.png" : "GJ_button_01.png");
+    m_save->setEnabled(!isSaved);
+  }
+
   geode::Result<int> getIndexFromID(std::string id) {
     std::string_view numStr = std::string_view(id).substr(id.rfind('-') + 1);
     return geode::utils::numFromString<int>(numStr);
@@ -483,7 +499,7 @@ protected:
   void applyColorToSprite(NineSlice* sprite, std::string hex = "#FFFFFF") {
     hex = hex.length() == 7 ? hex : "#FFFFFF"; // Fallback to white if the hex code is invalid
     hex.erase(0, 1); // Removes the '#' character
-    sprite->setColor(ColorSelectPopup::hexToColor(hex));
+    sprite->setColor(utils.hexToColor(hex));
   }
 };
 
