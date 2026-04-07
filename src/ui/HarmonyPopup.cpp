@@ -1,6 +1,6 @@
 #include <Geode/ui/ColorPickPopup.hpp>
-#include <Geode/ui/ColorPickPopup.hpp>
 #include "../managers/HarmonyManager.hpp"
+#include "../utils/ColorUtils.hpp"
 
 using namespace geode::prelude;
 
@@ -94,9 +94,6 @@ protected:
       auto colorSpr =static_cast<ColorChannelSprite *>(colorBtn->getNormalImage());
       auto color = colorSpr->getColor();
 
-      auto popup = ColorSelectPopup::create(color);
-      popup->m_colorPicker->setColorValue(color);
-      popup->onCopy(sender);
-      Notification::create("Color copied!", NotificationIcon::Success)->show();
+      ColorUtils::get().copyColor(color, sender);
     }
 };
