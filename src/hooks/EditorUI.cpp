@@ -1,10 +1,6 @@
 #include <Geode/modify/EditorUI.hpp>
-#include <Geode/binding/LevelEditorLayer.hpp>
-#include <Geode/loader/Mod.hpp>
-#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
-#include <Geode/cocos/cocoa/CCObject.h>
 #include "../ui/MainPopup.cpp"
-//#include "../ui/HarmonyPopup.cpp"
+#include "../managers/DataManager.hpp"
 
 using namespace geode::prelude;
 
@@ -17,6 +13,9 @@ class $modify(MyEditorUI, EditorUI) {
     bool init(LevelEditorLayer* layer) {
         if (!EditorUI::init(layer)) return false;
 
+        //pre-load data
+        DataManager::get().load();
+        
         auto sprite = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName("icon.png"_spr), EditorBaseColor::LightBlue);
         m_fields->mainBtn = CCMenuItemSpriteExtra::create(sprite, this, menu_selector(MyEditorUI::onMainPopup));
         m_fields->mainBtn->setContentSize(ccp(40.f, 40.f));
@@ -34,11 +33,6 @@ class $modify(MyEditorUI, EditorUI) {
 
     void onMainPopup(CCObject*) {
         MainPopup::create()->show();
-    }
-
-    void onHarmonyPopup(CCObject*)
-    {
-        HarmonyPopup::create({255, 5, 255})->show();
     }
 
     void showUI(bool show) {
