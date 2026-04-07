@@ -1,9 +1,11 @@
 # pragma once
 #include "SettingsManager.hpp"
+#include "../utils/ColorUtils.hpp"
 
 using namespace geode::prelude;
 class HarmonyManager {
     public:
+    ColorUtils &utils = ColorUtils::get();
     Palette getComplementary(ccColor3B const& color);
     Palette getAnalogous(ccColor3B const& color);
     Palette getTriadic(ccColor3B const& color);
@@ -20,7 +22,5 @@ class HarmonyManager {
 
     private:
     HarmonyManager() = default;
-    RGBA toRGBA(ccColor3B const& color);
-    std::string hsvToHex(HSV hsv);
     float wrapHue(float h);
 };
