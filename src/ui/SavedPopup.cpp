@@ -161,6 +161,9 @@ protected:
 
     m_manager.setFavorite(paletteId);
     updateBtnSprite(btn, m_manager.isFavorite(paletteId));
+
+    //sync m_items with the manager's data
+    reloadItems();
   }
 
   void onRemove(CCObject *sender) {
@@ -191,7 +194,6 @@ protected:
     int end = std::min(start + m_itemsPerPage, m_totalItems);
 
     for (int i = start; i < end; ++i) {
-      geode::log::info("Adding palette index {} to page {}", i, page + 1);
       m_menu->addChild(colorPalette(m_items[i]));
     }
     m_menu->updateLayout();
@@ -223,10 +225,7 @@ protected:
 
   void updateItems(bool reload = true) {
     if (reload) {
-      m_items = m_manager.load();
-      m_totalItems = m_items.size();
-      std::reverse(m_items.begin(), m_items.end());
-      
+      reloadItems();
       if (m_totalItems % m_itemsPerPage == 0 && m_page > 0) {
         m_page--;
       }
@@ -235,6 +234,12 @@ protected:
     updatePage(m_page);
     updatePageLabel();
     updateNavButtons();
+  }
+
+  void reloadItems () {
+    m_items = m_showFavOnly ? m_manager.getFavoritePalettes() : m_manager.load();
+    m_totalItems = m_items.size();
+    std::reverse(m_items.begin(), m_items.end());
   }
 
   NineSlice *colorPalette(SavedPalette palette) {

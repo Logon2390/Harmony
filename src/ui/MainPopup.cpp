@@ -272,7 +272,7 @@ protected:
     settingsPopup->show();
     settingsPopup->onColorsChanged = [this]() {
       updateUI();
-    };       
+    };
   }
 
   void onColorChannel(CCObject *sender) {
@@ -310,6 +310,7 @@ protected:
           self->updateSpritesColor(result);
           self->updateInfoLabel();
           self->updateNavigationButtons();
+          self->updateSaveButton();
         } else {
           FLAlertLayer::create("Error", "Failed to generate palette. Please try again.", "OK")->show();
         }
@@ -432,6 +433,14 @@ protected:
         CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frame));
   }
 
+  void updateSaveButton() {
+    bool isSaved = data.isSaved(HueMintService::m_currentPaletteResult.currentItem);
+    ButtonSprite* saveSpr = static_cast<ButtonSprite*>(m_save->getNormalImage());
+    saveSpr->setString(isSaved ? "Saved" : "Save");
+    saveSpr->updateBGImage(isSaved ? "GJ_button_02.png" : "GJ_button_01.png");
+    m_save->setEnabled(!isSaved);
+  }
+
   void updateUI() {
     m_colors = manager.getRequest().num_colors;
     for (int i = 0; i < SettingsManager::MAX_COLORS; i++) {
@@ -449,12 +458,11 @@ protected:
     updateNavigationButtons();
 
     for (int i = 0; i < SettingsManager::MAX_COLORS; i++) {
-      NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons[i]->getNormalImage());
-      colorSpr->setColor({255, 255, 255});
       updateLockButton(i, false);
       updateColorButton(i);
     }
 
+    updateSpritesColor(manager.getCurrentPalette());
     m_infoLabel->setString("");
     m_colorsMenu->updateLayout();
   }
@@ -471,20 +479,12 @@ protected:
     return menu ? menu->isVisible() : false;
   }
 
-  void updateSaveButton() {
-    bool isSaved = data.isSaved(HueMintService::m_currentPaletteResult.currentItem);
-    ButtonSprite* saveSpr = static_cast<ButtonSprite*>(m_save->getNormalImage());
-    saveSpr->setString(isSaved ? "Saved" : "Save");
-    saveSpr->updateBGImage(isSaved ? "GJ_button_02.png" : "GJ_button_01.png");
-    m_save->setEnabled(!isSaved);
-  }
-
   geode::Result<int> getIndexFromID(std::string id) {
     std::string_view numStr = std::string_view(id).substr(id.rfind('-') + 1);
     return geode::utils::numFromString<int>(numStr);
   }
 
-  NineSlice* createColorSpr(int index, float width, float height, std::string hex = "#FFFFFF") {
+  NineSlice* createColorSpr(int index, float width, float height) {
     bool isCorner = (index == 0 || index == m_colors - 1);
     const char* spriteName = isCorner ? "square02b_001.png" : "square.png";
     CCRect rect = isCorner ? CCRect{0, 0, 50, 80} : CCRect{0, 0, 80, 80};
@@ -492,7 +492,6 @@ protected:
     NineSlice* colorSpr = NineSlice::create(spriteName, rect);
     colorSpr->setRotation(isCorner && index == m_colors - 1 ? 180.f : 0.f);
     colorSpr->setContentSize({width, height});
-    applyColorToSprite(colorSpr, hex);
     return colorSpr;
   }
 

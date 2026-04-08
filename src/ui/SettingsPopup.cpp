@@ -265,6 +265,7 @@ protected:
             if (btn2) {
                 manager.reset();
                 updateFields();
+                onColorsChanged();
             }
         });
   }
