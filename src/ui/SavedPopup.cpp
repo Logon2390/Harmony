@@ -26,13 +26,13 @@ protected:
   CCMenuItemSpriteExtra* m_favOnlyBtn;
   CCLabelBMFont* m_pageLabel;
   std::vector<SavedPalette> m_items;
-  const int m_itemsPerPage = 9;
+  const int m_itemsPerPage = 6;
   int m_page = 0;
   int m_totalItems = 0;
   bool m_showFavOnly = false;
   
   bool init() {
-    if (!Popup::init(440.f, 260.f)) return false;
+    if (!Popup::init(380.f, 260.f)) return false;
 
     m_items = m_manager.load();
     m_totalItems = m_items.size();
@@ -50,7 +50,7 @@ protected:
     m_pageLabel = CCLabelBMFont::create("", "goldFont.fnt");
     m_pageLabel->setScale(0.4f);
 
-    m_searchInput = TextInput::create(300.f, "Search by name");
+    m_searchInput = TextInput::create(260.f, "Search by name");
     m_searchInput->setCommonFilter(CommonFilter::Alphanumeric);
     m_searchInput->setMaxCharCount(25);
     m_searchInput->setTextAlign(TextInputAlign::Left);
@@ -86,7 +86,7 @@ protected:
     m_favOnlyBtn->m_scaleMultiplier = 0.85f;
 
     m_menu = CCMenu::create();
-    m_menu->setContentSize({370.f, 180.f});
+    m_menu->setContentSize({310.f, 200.f});
     m_menu->setLayout(
       RowLayout::create()
         ->setGap(5.f)
@@ -96,14 +96,14 @@ protected:
         ->setCrossAxisOverflow(false)
         ->setAutoScale(false));
 
-    m_mainLayer->addChildAtPosition(m_searchInput, Anchor::TopLeft, ccp(35.f, -40.f));
+    m_mainLayer->addChildAtPosition(m_searchInput, Anchor::TopLeft, ccp(35.f, -30.f));
     m_mainLayer->addChildAtPosition(m_menu, Anchor::Center, ccp(0.f, -20.f));
     m_mainLayer->addChildAtPosition(m_pageLabel, Anchor::TopRight, ccp(-30.f, -10.f));
 
     auto optsMenu = this->m_closeBtn->getParent();
-    optsMenu->addChildAtPosition(m_searchBtn, Anchor::TopRight, ccp(-145.f, -40.f));
-    optsMenu->addChildAtPosition(m_clearBtn, Anchor::TopRight, ccp(-110.f, -40.f));
-    optsMenu->addChildAtPosition(m_favOnlyBtn, Anchor::TopRight, ccp(-80.f, -40.f));
+    optsMenu->addChildAtPosition(m_searchBtn, Anchor::TopRight, ccp(-115.f, -30.f));
+    optsMenu->addChildAtPosition(m_clearBtn, Anchor::TopRight, ccp(-80.f, -30.f));
+    optsMenu->addChildAtPosition(m_favOnlyBtn, Anchor::TopRight, ccp(-50.f, -30.f));
     optsMenu->addChildAtPosition(m_prev, Anchor::Left, ccp(20.f, 0.f));
     optsMenu->addChildAtPosition(m_next, Anchor::Right, ccp(-20.f, 0.f));
 
@@ -127,6 +127,7 @@ protected:
   }
 
   void onClearInput(CCObject* sender) {
+    if (m_searchInput->getString().empty()) return;
     m_searchInput->setString("");
     updateItems();
   }
@@ -244,9 +245,9 @@ protected:
 
   NineSlice *colorPalette(SavedPalette palette) {
     auto bg = NineSlice::create("square02b_001.png", {0.0f, 0.0f, 80.0f, 80.0f});
-    bg->setContentSize({170.f, 70.f}); //150 x 70
+    bg->setContentSize({170.f, 70.f});
     bg->setColor({130, 64, 33});
-    bg->setScale(0.7f);
+    bg->setScale(0.9f);
 
     auto label = CCLabelBMFont::create(palette.name.c_str(), "goldFont.fnt");
     label->setScale(0.35f);
