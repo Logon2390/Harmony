@@ -1,5 +1,4 @@
 #pragma once
-#include "SettingsManager.hpp"
 
 using namespace geode::prelude;
 
@@ -34,22 +33,6 @@ struct matjson::Serialize<SavedPalette>
     }
 };
 
-
-template <>
-struct fmt::formatter<SavedPalette> {
-    constexpr auto parse(fmt::format_parse_context& ctx) { return ctx.begin(); }
-
-    auto format(const SavedPalette& p, fmt::format_context& ctx) const {
-        return fmt::format_to(ctx.out(), 
-            "{{id: {}, name: {}, favorite: {}, colors: [{}]}}", 
-            p.id,
-            p.name,
-            p.isFavorite ? "true" : "false",
-            fmt::join(p.colors, ", ")
-        );
-    }
-};
-
 class DataManager {
     public:
         static DataManager& get() {
@@ -62,7 +45,9 @@ class DataManager {
         std::vector<SavedPalette>& load();
         std::vector<SavedPalette> getPaletteByName(const std::string& name);
         std::vector<SavedPalette> getFavoritePalettes();
-        void create(Palette palette, const std::string &name);
+        SavedPalette getPaletteByID(const std::string& id);
+        void create(SavedPalette &palette, const std::string &name);
+        void update(const SavedPalette &palette);
         void remove(const std::string& id);
         void setFavorite(const std::string& id);
         bool isFavorite(const std::string& id);

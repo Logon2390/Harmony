@@ -263,7 +263,7 @@ protected:
         "Are you sure you want to reset all settings?",
         "Cancel", "Reset", [this](auto, bool btn2) {
             if (btn2) {
-                manager.reset();
+                manager.resetSettings();
                 updateFields();
                 onColorsChanged();
             }
@@ -276,8 +276,10 @@ protected:
     m_colors->setString(std::to_string(manager.getRequest().num_colors).c_str());
     m_temperature->setString(std::to_string(manager.getRequest().temperature).erase(3).c_str());
 
-    int results = (HueMintService::m_currentPaletteResult.items == 0)
-                      ? 10 : HueMintService::m_currentPaletteResult.items;
+    int results = (
+      service.getPalettePool().palettes.size() == 0)
+      ? 10 : service.getPalettePool().palettes.size();
+
     m_results->setString(std::to_string(results).c_str());
   }
 

@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include "DataManager.hpp"
 
 using namespace geode::prelude;
 
@@ -25,13 +26,6 @@ struct Palette
 struct ResponseBody
 {
     std::vector<Palette> results;
-};
-
-struct PaletteResult
-{
-    int items;
-    int currentItem;
-    ResponseBody response;
 };
 
 template <>
@@ -62,7 +56,6 @@ struct matjson::Serialize<RequestBody>
                 {"adjacency", value.adjacency},
                 {"palette", value.palette}
             });
-
     }
 };
 
@@ -119,9 +112,11 @@ public:
     return instance;
   }
 
-  Palette& getCurrentPalette();
-  Palette getNextPalette();
-  Palette getPrevPalette();
+  //stores the id of loaded palettes in the current results
+  std::unordered_map<std::string, bool> m_loadedPalettes;
+  SavedPalette& getCurrentPalette();
+  SavedPalette getNextPalette();
+  SavedPalette getPrevPalette();
   std::string setMode(bool next);
   std::string setPreset(bool next);
   void setMaxColors(int numColors);
@@ -131,11 +126,17 @@ public:
   bool isColorLocked(int index);
   bool isColorLocked(std::string colorHex);
   void swapColors(int indexFrom, int indexTo);
-  void reset();
+  void resetSettings();
+  void resetPalettePool();
+  void addPalette(const SavedPalette& palette);
+  void removePalette(const std::string& id);
+  void setLoaded(const std::string& id);
+  bool isLoaded(const std::string& id);
+  void clearLoaded();
   const RequestBody &getRequest() const;
 
 private:
-    Palette defaultPalette;
+    SavedPalette defaultPalette;
     RequestBody m_request;
     std::array<std::string, 3> m_modes;
     std::array<std::string, 7> m_presets;
@@ -152,7 +153,12 @@ private:
         .palette = {"-", "-", "-", "-"}};
 
     SettingsManager() {
-        defaultPalette = {{"#03045E", "#023E8A", "#0077B6", "#0096C7", "#00B4D8", "#48CAE4", "#90E0EF", "#ADE8F4", "#CAF0F8", "#CFF1F9", "#DBF4FA", "#FFFFFF"}, 0.f};
+        defaultPalette = {
+            "",
+            {"#03045E", "#023E8A", "#0077B6", "#0096C7", "#00B4D8", "#48CAE4", "#90E0EF", "#ADE8F4", "#CAF0F8", "#CFF1F9", "#DBF4FA", "#FFFFFF"},
+            "Palette name",
+            false
+        };
         m_modes = {"transformer", "diffusion", "random"};
         m_presets = {"default", "high-contrast", "bright-light", "pastel", "vibrant", "dark", "hyper-color"};
         m_request = m_defaultRequest;

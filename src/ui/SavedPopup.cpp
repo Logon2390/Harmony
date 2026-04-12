@@ -1,4 +1,5 @@
 #include "../managers/DataManager.hpp"
+#include "../managers/SettingsManager.hpp"
 #include "../utils/ColorUtils.hpp"
 
 using namespace geode::prelude;
@@ -49,6 +50,7 @@ protected:
 
     m_pageLabel = CCLabelBMFont::create("", "goldFont.fnt");
     m_pageLabel->setScale(0.4f);
+    m_pageLabel->setAnchorPoint({1.f, 0.5f});
 
     m_searchInput = TextInput::create(260.f, "Search by name");
     m_searchInput->setCommonFilter(CommonFilter::Alphanumeric);
@@ -98,7 +100,7 @@ protected:
 
     m_mainLayer->addChildAtPosition(m_searchInput, Anchor::TopLeft, ccp(35.f, -30.f));
     m_mainLayer->addChildAtPosition(m_menu, Anchor::Center, ccp(0.f, -20.f));
-    m_mainLayer->addChildAtPosition(m_pageLabel, Anchor::TopRight, ccp(-30.f, -10.f));
+    m_mainLayer->addChildAtPosition(m_pageLabel, Anchor::TopRight, ccp(-5.f, -10.f));
 
     auto optsMenu = this->m_closeBtn->getParent();
     optsMenu->addChildAtPosition(m_searchBtn, Anchor::TopRight, ccp(-115.f, -30.f));
@@ -137,10 +139,9 @@ protected:
     auto spr = static_cast<CCSprite *>(btn->getNormalImage());
     m_showFavOnly = !m_showFavOnly;
 
-    updateBtnSprite(btn, m_showFavOnly);
-    m_items = m_showFavOnly ? m_manager.getFavoritePalettes() : m_manager.load();
     m_page = 0;
-    updateItems(false);
+    updateFavBtnSprite(btn, m_showFavOnly);
+    updateItems();
   }
 
   void onPrev(CCObject* sender) {
@@ -161,7 +162,7 @@ protected:
     std::string paletteId = static_cast<CCString*>(menu->getUserObject())->getCString();
 
     m_manager.setFavorite(paletteId);
-    updateBtnSprite(btn, m_manager.isFavorite(paletteId));
+    updateFavBtnSprite(btn, m_manager.isFavorite(paletteId));
 
     //sync m_items with the manager's data
     reloadItems();
@@ -187,8 +188,8 @@ protected:
     if (page < 0 || page > (m_totalItems - 1) / m_itemsPerPage) return;
     if (m_items.empty()) return;
 
-    m_totalItems = m_items.size();
     m_page = page;
+    m_totalItems = m_items.size();
     m_menu->removeAllChildren();
 
     int start = page * m_itemsPerPage;
@@ -200,6 +201,26 @@ protected:
     m_menu->updateLayout();
   }
 
+  void onLoadToggle(CCObject *sender) {
+    auto paletteBtn = static_cast<CCMenuItemSpriteExtra *>(sender);
+    auto menu = static_cast<CCMenu *>(paletteBtn->getParent());
+    std::string paletteId = static_cast<CCString*>(menu->getUserObject())->getCString();
+
+    SavedPalette palette = m_manager.getPaletteByID(paletteId);
+    bool isLoaded = SettingsManager::get().isLoaded(paletteId);
+
+    if (isLoaded) {
+      SettingsManager::get().removePalette(paletteId);
+      Notification::create("Palette unloaded", NotificationIcon::Success)->show();
+    }
+    else {
+      SettingsManager::get().addPalette(palette);
+      Notification::create("Palette loaded", NotificationIcon::Success)->show();
+    }
+
+    updateUseBtn(paletteBtn, SettingsManager::get().isLoaded(paletteId));
+  }
+
   void onColorSelect(CCObject *sender) {
     auto colorBtn = static_cast<CCMenuItemSpriteExtra *>(sender);
     auto colorSpr =static_cast<ColorChannelSprite *>(colorBtn->getNormalImage());
@@ -209,7 +230,7 @@ protected:
   }
 
   void updatePageLabel() {
-    m_pageLabel->setString(fmt::format("Page {}/{}", m_page + 1, (m_totalItems - 1) / m_itemsPerPage + 1).c_str());
+    m_pageLabel->setString(fmt::format("Page {}/{} - {} items", m_page + 1, (m_totalItems - 1) / m_itemsPerPage + 1, m_totalItems).c_str());
   }
 
   void updateNavButtons() {
@@ -217,10 +238,17 @@ protected:
     m_next->setVisible(m_page < (m_totalItems - 1) / m_itemsPerPage);
   }
 
-  void updateBtnSprite(CCMenuItemSpriteExtra* btn, bool isFav) {
+  void updateFavBtnSprite(CCMenuItemSpriteExtra* btn, bool isFav) {
     auto favSpr = static_cast<CCSprite *>(btn->getNormalImage());
     favSpr->setDisplayFrame(
       CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(isFav ? "gj_heartOn_001.png" : "gj_heartOff_001.png")
+    );
+  }
+
+  void updateUseBtn(CCMenuItemSpriteExtra* btn, bool isLoaded) {
+    auto useSpr = static_cast<CCSprite *>(btn->getNormalImage());
+    useSpr->setDisplayFrame(
+      CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(isLoaded ? "GJ_selectSongOnBtn_001.png" : "GJ_selectSongBtn_001.png")
     );
   }
 
@@ -266,21 +294,27 @@ protected:
       ->setCrossAxisOverflow(false)
       ->setAutoScale(false));
 
+    bool isLoaded = SettingsManager::get().isLoaded(palette.id);
+    auto useSpr = CCSprite::createWithSpriteFrameName(isLoaded ? "GJ_selectSongOnBtn_001.png" : "GJ_selectSongBtn_001.png");
     auto favBtnSpr = CCSprite::createWithSpriteFrameName(palette.isFavorite ? "gj_heartOn_001.png" : "gj_heartOff_001.png");
     auto removeBtnSpr = CCSprite::createWithSpriteFrameName("GJ_resetBtn_001.png");
+    useSpr->setScale(0.5f);
     favBtnSpr->setScale(0.6f);
     removeBtnSpr->setScale(0.7f);
 
+    auto useBtn = CCMenuItemSpriteExtra::create(useSpr, this, menu_selector(SavedPopup::onLoadToggle));
     auto favBtn = CCMenuItemSpriteExtra::create(favBtnSpr, this, menu_selector(SavedPopup::onFavoriteToggle));
     auto removeBtn = CCMenuItemSpriteExtra::create(removeBtnSpr, this, menu_selector(SavedPopup::onRemove));
+    useBtn->m_scaleMultiplier = 0.75f;
     favBtn->m_scaleMultiplier = 0.65f;
     removeBtn->m_scaleMultiplier = 0.75f;
 
     auto menu = CCMenu::create();
     menu->setContentSize({150.f, 70.f});
     menu->setUserObject(CCString::create(palette.id));
-    menu->addChildAtPosition(removeBtn, Anchor::Right, ccp(-5.f, -20.f));
-    menu->addChildAtPosition(favBtn, Anchor::Right, ccp(-5.f, 0.f));
+    menu->addChildAtPosition(favBtn, Anchor::Right, ccp(-5.f, -20.f));
+    menu->addChildAtPosition(removeBtn, Anchor::Right, ccp(-5.f, 0.f));
+    menu->addChildAtPosition(useBtn, Anchor::Right, ccp(-5.f, 20.f));
 
     bg->addChildAtPosition(colors, Anchor::TopLeft, ccp(10.f, -40.f));
     bg->addChildAtPosition(menu, Anchor::Center);
@@ -288,7 +322,7 @@ protected:
     for (int i = 0; i < palette.colors.size(); ++i) {
       auto hex = palette.colors[i].erase(0, 1); // remove # from hex string
       auto color = ColorChannelSprite::create();
-      color->setColor(ColorSelectPopup::hexToColor(hex));
+      color->setColor(ColorUtils::get().hexToColor(hex));
       color->setScale(0.5f);
 
       auto colorBtn = CCMenuItemSpriteExtra::create(color, this, menu_selector(SavedPopup::onColorSelect));

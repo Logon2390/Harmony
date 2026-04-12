@@ -1,38 +1,40 @@
 #include "SettingsManager.hpp"
 #include "../network/HueMintService.hpp"
 
-Palette &SettingsManager::getCurrentPalette() {
+HueMintService& service = HueMintService::get();
 
-  if (HueMintService::m_currentPaletteResult.items == 0) {
+SavedPalette &SettingsManager::getCurrentPalette() {
+
+  if (service.getPalettePool().palettes.size() == 0) {
     return defaultPalette;
   }
 
-  int currentIndex = HueMintService::m_currentPaletteResult.currentItem;
-  return HueMintService::m_currentPaletteResult.response.results.at(currentIndex);
+  int currentIndex = service.getPalettePool().currentItem;
+  return service.getPalettePool().palettes.at(currentIndex);
 }
 
-Palette SettingsManager::getNextPalette()
+SavedPalette SettingsManager::getNextPalette()
 {
-    int currentIndex = HueMintService::m_currentPaletteResult.currentItem;
+    int currentIndex = service.getPalettePool().currentItem;
     int nextIndex = currentIndex + 1;
 
-    if (nextIndex >= HueMintService::m_currentPaletteResult.items)
-        return HueMintService::m_currentPaletteResult.response.results.at(currentIndex);
+    if (nextIndex >= service.getPalettePool().palettes.size())
+        return service.getPalettePool().palettes.at(currentIndex);
 
-    HueMintService::m_currentPaletteResult.currentItem = nextIndex;
-    return HueMintService::m_currentPaletteResult.response.results.at(nextIndex);
+    service.getPalettePool().currentItem = nextIndex;
+    return service.getPalettePool().palettes.at(nextIndex);
 }
 
-Palette SettingsManager::getPrevPalette()
+SavedPalette SettingsManager::getPrevPalette()
 {
-    int currentIndex = HueMintService::m_currentPaletteResult.currentItem;
+    int currentIndex = service.getPalettePool().currentItem;
     int prevIndex = currentIndex - 1;
 
     if (currentIndex == 0)
-        return HueMintService::m_currentPaletteResult.response.results.at(currentIndex);
+        return service.getPalettePool().palettes.at(currentIndex);
 
-    HueMintService::m_currentPaletteResult.currentItem = prevIndex;
-    return HueMintService::m_currentPaletteResult.response.results.at(prevIndex);
+    service.getPalettePool().currentItem = prevIndex;
+    return service.getPalettePool().palettes.at(prevIndex);
 }
 
 std::string SettingsManager::setMode(bool next) 
@@ -131,7 +133,41 @@ void SettingsManager::swapColors(int indexFrom, int indexTo)
     std::swap(getCurrentPalette().colors.at(indexFrom), getCurrentPalette().colors.at(indexTo));
 }
 
-void SettingsManager::reset() 
+void SettingsManager::resetPalettePool() 
+{
+    service.getPalettePool() = PaletteResult{};
+}
+
+void SettingsManager::addPalette(const SavedPalette &palette)
+{
+    service.getPalettePool().palettes.push_back(palette);
+    setLoaded(palette.id);
+}
+
+void SettingsManager::removePalette(const std::string &id)
+{
+    auto &palettes = service.getPalettePool().palettes;
+    palettes.erase(std::remove_if(palettes.begin(), palettes.end(), [&id](const SavedPalette &p) {
+        return p.id == id; }), palettes.end());
+    m_loadedPalettes.erase(id);
+}
+
+void SettingsManager::setLoaded(const std::string &id)
+{
+    m_loadedPalettes[id] = true;
+}
+
+bool SettingsManager::isLoaded(const std::string &id)
+{
+    return m_loadedPalettes.count(id) > 0 && m_loadedPalettes.at(id);
+}
+
+void SettingsManager::clearLoaded() 
+{
+    m_loadedPalettes.clear();
+}
+
+void SettingsManager::resetSettings() 
 {
     m_request = m_defaultRequest;
 }

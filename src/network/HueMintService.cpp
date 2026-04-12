@@ -1,7 +1,6 @@
 #include "HueMintService.hpp"
 #include "../managers/SettingsManager.hpp"
 
-PaletteResult HueMintService::m_currentPaletteResult{};
 SettingsManager &manager = SettingsManager::get();
 
 void HueMintService::request(std::function<void(Palette)> onComplete)
@@ -30,14 +29,17 @@ void HueMintService::request(std::function<void(Palette)> onComplete)
 
 PaletteResult HueMintService::mapPaletteResult(ResponseBody response) {
     PaletteResult result;
-    result.items = response.results.size();
     result.currentItem = 0;
-    result.response = response;
+
+    for (const auto& palette : response.results) {
+      result.palettes.push_back(SavedPalette{
+        .id = "",
+        .colors = palette.colors,
+        .name = "Palette name",
+        .isFavorite = false
+      });
+    }
 
     m_currentPaletteResult = result;
     return result;
-}
-
-void HueMintService::resetPalette() {
-    m_currentPaletteResult = PaletteResult{};
 }

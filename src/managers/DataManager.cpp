@@ -1,16 +1,28 @@
 #include "DataManager.hpp"
 
-void DataManager::create(Palette palette, const std::string &name) {
-  SavedPalette savedPalette;
+void DataManager::create(SavedPalette &palette, const std::string &name) {
+
   auto id = random::generateUUID();
-  savedPalette.id = id;
-  savedPalette.name = name;
-  savedPalette.isFavorite = false;
-  savedPalette.colors = palette.colors;
+  palette.id = id;
+  palette.name = name;
+  palette.isFavorite = false;
+  palette.colors = palette.colors;
 
   auto &palettes = load();
-  palettes.push_back(savedPalette);
+  palettes.push_back(palette);
   save();
+}
+
+void DataManager::update(const SavedPalette &palette) {
+  auto &palettes = load();
+  auto it = std::find_if(
+      palettes.begin(), palettes.end(),
+      [&palette](const SavedPalette &p) { return p.id == palette.id; });
+
+  if (it != palettes.end()) {
+    *it = palette;
+    save();
+  }
 }
 
 void DataManager::save() 
@@ -102,4 +114,19 @@ std::vector<SavedPalette> DataManager::getFavoritePalettes()
                [](const SavedPalette &p) { return p.isFavorite; });
 
   return result;
+}
+
+SavedPalette DataManager::getPaletteByID(const std::string &id)
+{
+    auto &palettes = load();
+    auto it = std::find_if(
+      palettes.begin(), palettes.end(), [&id](const SavedPalette &p) { 
+        return p.id == id; 
+      }
+    );
+
+    if (it != palettes.end()) {
+        return *it;
+    }
+    return SavedPalette();
 }
