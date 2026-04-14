@@ -7,6 +7,7 @@ using namespace geode::prelude;
 
 struct PaletteResult
 {
+    int totalItems;
     int currentItem;
     std::vector<SavedPalette> palettes;
 };

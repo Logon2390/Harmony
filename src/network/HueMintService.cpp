@@ -30,6 +30,7 @@ void HueMintService::request(std::function<void(Palette)> onComplete)
 PaletteResult HueMintService::mapPaletteResult(ResponseBody response) {
     PaletteResult result;
     result.currentItem = 0;
+    result.totalItems = response.results.size();
 
     for (const auto& palette : response.results) {
       result.palettes.push_back(SavedPalette{
