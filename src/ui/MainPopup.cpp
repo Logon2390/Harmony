@@ -1,5 +1,6 @@
 #include "../managers/SettingsManager.hpp"
 #include "../managers/DataManager.hpp"
+#include "../managers/SimulationManager.hpp"
 #include "../network/HueMintService.hpp"
 #include "../utils/ColorUtils.hpp"
 #include "SettingsPopup.cpp"
@@ -24,6 +25,7 @@ protected:
   ColorUtils &utils = ColorUtils::get();
   DataManager &data = DataManager::get();
   SettingsManager &manager = SettingsManager::get();
+  SimulationManager &simulation = SimulationManager::get();
   HueMintService &service = HueMintService::get();
   std::array<CCMenuItemSpriteExtra *, SettingsManager::MAX_COLORS> m_colorButtons;
   TextInput* m_nameInput;
@@ -32,10 +34,11 @@ protected:
   CircleButtonSprite* m_generateSpr;
   CCMenuItemSpriteExtra* m_generate;
   CCMenuItemSpriteExtra* m_save;
+  CCMenuItemSpriteExtra* m_test;
   CCMenu* m_navMenu;
   CCMenu* m_colorsMenu;
+  CCMenu* m_testMenu;
   bool m_isLoaded = false;
-  int m_colors = 2;
   int m_swapIndex = -1;
   const float width = 440.f;
   const float height = 260.f;
@@ -50,8 +53,7 @@ protected:
     const char *goldFontName = "goldFont.fnt";
 
     m_spinner = LoadingSpinner::create(30.f);
-    m_isLoaded = (HueMintService::m_currentPaletteResult.items != 0);
-    m_colors = manager.getRequest().num_colors;
+    m_isLoaded = service.getPalettePool().palettes.size() != 0;
 
     auto resetSpr = CircleButtonSprite::create(
       // @geode-ignore(unknown-resource)
@@ -196,8 +198,11 @@ protected:
     m_generate = CCMenuItemSpriteExtra::create(m_generateSpr, this, menu_selector(MainPopup::onGeneratePalette));
   
     ButtonSprite* saveSpr = ButtonSprite::create("Save");
-    saveSpr->setScale(0.6f);
     m_save = CCMenuItemSpriteExtra::create(saveSpr, this, menu_selector(MainPopup::onSavePalette));
+    m_save->setAnchorPoint(ccp(0.f, 0.5f));
+    m_save->setScale(0.6f);
+    m_save->m_baseScale = 0.6f;
+    m_save->m_scaleMultiplier = 1.1f;
 
     CCSprite* prevSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
     CCSprite* nextSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
@@ -211,9 +216,9 @@ protected:
     nextSprite->setScale(0.6f);
     nextSprite->setFlipX(true);
 
-    m_navMenu->addChildAtPosition(CCMenuItemSpriteExtra::create(m_prev, this, menu_selector(MainPopup::onPrevPalette)), Anchor::Center, ccp(70.f, 0.f));
-    m_navMenu->addChildAtPosition(CCMenuItemSpriteExtra::create(m_next, this, menu_selector(MainPopup::onNextPalette)), Anchor::Center, ccp(100.f, 0.f));
-    m_navMenu->addChildAtPosition(m_save, Anchor::Center, ccp(-210.f, 0.f));
+    m_navMenu->addChildAtPosition(m_prev, Anchor::Center, ccp(70.f, 0.f));
+    m_navMenu->addChildAtPosition(m_next, Anchor::Center, ccp(100.f, 0.f));
+    m_navMenu->addChildAtPosition(m_save, Anchor::Center, ccp(-225.f, 0.f));
     mainMenu->addChildAtPosition(m_generate, Anchor::Center, ccp(197.5f, 0.f));
 
     m_infoLabel = CCLabelBMFont::create("",bigFontName);
@@ -221,29 +226,62 @@ protected:
     m_infoLabel->setAnchorPoint(ccp(0.f, 0.5f));
     optsBG->addChildAtPosition(m_infoLabel, Anchor::Left,ccp(10.f, -10.5f));
 
+    CCLabelBMFont* harmonyInfo = CCLabelBMFont::create("Simulation Mode", goldFontName);
+    harmonyInfo->setScale(0.4f);
+    harmonyInfo->setAnchorPoint(ccp(0.f, 0.5f));
+    testModeBG->addChildAtPosition(harmonyInfo, Anchor::TopLeft, ccp(10.f, -10.f));
+
+    m_testMenu = CCMenu::create();
+    m_testMenu->setZOrder(2);
+    m_testMenu->setContentSize(ccp(100.f, 30.f));
+    m_testMenu->setAnchorPoint(ccp(1.f, 0.5f));
+    m_testMenu->setLayout(
+      RowLayout::create()
+      ->setGap(5.f)
+      ->setAxisAlignment(AxisAlignment::Even)
+      ->setCrossAxisOverflow(true)
+      ->setAutoScale(false));
+    testModeBG->addChildAtPosition(m_testMenu, Anchor::Right, ccp(-10.f, 0.f));
+
+    const char *frame = simulation.isActive() ? "GJ_stopEditorBtn_001.png" : "GJ_playEditorBtn_001.png";
+    CCSprite* testSpr = CCSprite::createWithSpriteFrameName(frame);
+    CCSprite* setupSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
+    CCSprite* helpSpr = CCSprite::createWithSpriteFrameName("GJ_helpBtn_001.png");
+
+    testSpr->setScale(0.8f);
+    setupSpr->setScale(0.6f);
+    helpSpr->setScale(0.8f);
+
+    m_test = CCMenuItemSpriteExtra::create(testSpr, testSpr, this, menu_selector(MainPopup::onSimulationToggle));
+    CCMenuItemSpriteExtra* settingsBtn = CCMenuItemSpriteExtra::create(setupSpr, setupSpr, this, menu_selector(MainPopup::onSimulationSettings));
+    CCMenuItemSpriteExtra* helpBtn = CCMenuItemSpriteExtra::create(helpSpr, helpSpr, this, menu_selector(MainPopup::onSimulationInfo));
+
+    m_testMenu->addChild(helpBtn);
+    m_testMenu->addChild(settingsBtn);
+    m_testMenu->addChild(m_test);
+    
     if (m_isLoaded) loadLastState();
 
     optionsMenu->updateLayout();
     mainMenu->updateLayout();
     m_colorsMenu->updateLayout();
     m_navMenu->updateLayout();
+    m_testMenu->updateLayout();
     return true;
   }
 
   void loadLastState() {
-    updateSpritesColor(manager.getCurrentPalette());
+    updateColorSprites(manager.getCurrentPalette().colors);
     updateInfoLabel();
     updateNavigationButtons();
-
-    for (int i = 0; i < m_colors; i++) {
-      updateLockButton(i, manager.isColorLocked(i));
-    }
+    updateSaveButton();
+    updateNameInput();
   }
 
   void onReset(CCObject *) {
     geode::createQuickPopup(
       "Reset all colors",
-      "Are you sure you want to reset all colors?",
+      "Are you sure you want to reset all colors? This action will also release all locked colors.",
       "Cancel", "Reset", [this](auto, bool btn2) {
         if (btn2) {
           handleReset();
@@ -307,10 +345,12 @@ protected:
         if (!result.colors.empty()) {
           self->m_isLoaded = true;
           self->data.clearSaved();
-          self->updateSpritesColor(result);
+          self->manager.clearLoaded();
+          self->updateColorSprites(result.colors);
           self->updateInfoLabel();
           self->updateNavigationButtons();
           self->updateSaveButton();
+          self->updateNameInput();
         } else {
           FLAlertLayer::create("Error", "Failed to generate palette. Please try again.", "OK")->show();
         }
@@ -318,24 +358,26 @@ protected:
     });
   }
 
-  void onSavePalette(CCObject *) {
+  void onSavePalette(CCObject *sender) {
     data.create(manager.getCurrentPalette(), m_nameInput->getString());
-    data.setSaved(HueMintService::m_currentPaletteResult.currentItem);
+    data.setSaved(service.getPalettePool().currentItem);
     updateSaveButton();
 
     Notification::create("Palette saved", NotificationIcon::Success)->show();
   }
 
-  void onNextPalette(CCObject *) {
-    updateSpritesColor(manager.getNextPalette());
+  void onNextPalette(CCObject *sender) {
+    updateColorSprites(manager.getNextPalette().colors);
     updateInfoLabel();
     updateSaveButton();
+    updateNameInput();
   }
 
-  void onPrevPalette(CCObject *) {
-    updateSpritesColor(manager.getPrevPalette());
+  void onPrevPalette(CCObject *sender) {
+    updateColorSprites(manager.getPrevPalette().colors);
     updateInfoLabel();
     updateSaveButton();
+    updateNameInput();
   }
 
   void onLockColorChannel(CCObject *sender) {
@@ -372,7 +414,7 @@ protected:
         }
 
         manager.swapColors(m_swapIndex, index);
-        updateSpritesColor(manager.getCurrentPalette());
+        updateColorSprites(manager.getCurrentPalette().colors);
         m_swapIndex = -1;
       }
     }
@@ -389,34 +431,65 @@ protected:
     }
   }
 
-  void updateSpritesColor(Palette palette) {
-    for (size_t i = 0; i < palette.colors.size(); i++) {
-      NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons[i]->getNormalImage());
-      applyColorToSprite(colorSpr, palette.colors.at(i));
+  void onSimulationToggle(CCObject *) {
+    //simulation.isActive() = !simulation.isActive();
+    updateTestButton();
+  }
+
+  void onSimulationSettings(CCObject *) {
+    FLAlertLayer::create(
+        "Simulation Settings",
+        "Here you can adjust the settings for the color harmony simulation mode.",
+        "OK")
+        ->show();
+  }
+
+  void onSimulationInfo(CCObject *) {
+    FLAlertLayer::create(
+        "Simulation Mode",
+        "In this mode, you can test how your palette would look in different types of color blindness and lighting conditions. This is a work in progress feature, so expect some quirks here and there.",
+        "OK")
+        ->show();
+  }
+
+  void updateColorSprites(std::vector<std::string> colors) {
+    for (size_t i = 0; i < manager.MAX_COLORS; i++) {
+      updateColorButton(i);
+
+      if (i < colors.size()) {
+        NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons[i]->getNormalImage());
+        applyColorToSprite(colorSpr, colors.at(i));
+      }
     }
+
+    //sync visibility of the color menu with the color button
+    handleHide(isColorMenuVisible());
+    m_colorsMenu->updateLayout();
   }
 
   void updateInfoLabel() {
     m_infoLabel->setString(
         fmt::format("Results: {} - {}",
-                    HueMintService::m_currentPaletteResult.currentItem + 1,
-                    HueMintService::m_currentPaletteResult.items)
+                    service.getPalettePool().currentItem + 1,
+                    service.getPalettePool().palettes.size())
             .c_str());
   }
 
   void updateColorButton(int index) {
-    bool isVisible = index < m_colors;
+    int colors = getCurrentColorLimit();
+    bool isVisible = index < colors;
     CCMenuItemSpriteExtra *btn = m_colorButtons[index];
-    CCSize size = {cropWidth / m_colors, 100.f};
 
-    btn->setNormalImage(createColorSpr(index, size.width, size.height));
-    btn->setContentSize(size);
+    if (isVisible) {
+      updateLockButton(index, manager.isColorLocked(index));
+
+      float width = cropWidth / colors;
+      btn->setNormalImage(createColorSpr(index, width, 100.f));
+      btn->setContentSize({width, 100.f});
+      btn->updateSprite();
+      btn->updateLayout();
+    }
     btn->setVisible(isVisible);
-    btn->updateSprite();
-    btn->updateLayout();
-
-    //sync visibility of the color menu with the color button
-    handleHide(isColorMenuVisible());
   }
 
   void updateNavigationButtons() {
@@ -434,43 +507,53 @@ protected:
   }
 
   void updateSaveButton() {
-    bool isSaved = data.isSaved(HueMintService::m_currentPaletteResult.currentItem);
+    bool isSaved = data.isSaved(HueMintService::get().getPalettePool().currentItem);
+    bool isLoaded = SettingsManager::get().isLoaded(manager.getCurrentPalette().id);
+    std::string title = isSaved ? "Saved" : isLoaded ? "Update" : "Save";
     ButtonSprite* saveSpr = static_cast<ButtonSprite*>(m_save->getNormalImage());
-    saveSpr->setString(isSaved ? "Saved" : "Save");
-    saveSpr->updateBGImage(isSaved ? "GJ_button_02.png" : "GJ_button_01.png");
+    saveSpr->setString(title.c_str());
+    saveSpr->updateBGImage(isSaved ? "GJ_button_02.png" : isLoaded ? "GJ_button_03.png" : "GJ_button_01.png");
     m_save->setEnabled(!isSaved);
   }
 
-  void updateUI() {
-    m_colors = manager.getRequest().num_colors;
-    for (int i = 0; i < SettingsManager::MAX_COLORS; i++) {
-      updateColorButton(i);
-      updateLockButton(i, manager.isColorLocked(i));
+  void updateNameInput() {
+    if (!m_isLoaded) {
+      m_nameInput->setString("Palette name");
+      return;
     }
+    std::string name = service.getPalettePool().palettes.at(service.getPalettePool().currentItem).name;
+    m_nameInput->setString(name.empty() ? "Palette name" : name.c_str());
+  }
 
-    updateSpritesColor(manager.getCurrentPalette());
+  void updateTestButton() {
+    CCSprite* testSpr = static_cast<CCSprite*>(m_test->getNormalImage());
+
+    const char *frame = simulation.isActive() ? "GJ_stopEditorBtn_001.png" : "GJ_playEditorBtn_001.png";
+    testSpr->setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frame));
+  }
+
+  void updateUI() {
+    updateColorSprites(manager.getCurrentPalette().colors);
     m_colorsMenu->updateLayout();
   }
 
   void handleReset() {
     m_isLoaded = false;
-    service.resetPalette();
+    manager.resetPalettePool();
+    manager.clearLoaded();
+    manager.resetLocks();
+
     updateNavigationButtons();
-
-    for (int i = 0; i < SettingsManager::MAX_COLORS; i++) {
-      updateLockButton(i, false);
-      updateColorButton(i);
-    }
-
-    updateSpritesColor(manager.getCurrentPalette());
+    updateColorSprites(manager.getCurrentPalette().colors);
     m_infoLabel->setString("");
     m_colorsMenu->updateLayout();
   }
 
   void handleHide(bool show) {
-    for (int i = 0; i < m_colors; i++) {
+    int colors = getCurrentColorLimit();
+    for (int i = 0; i < colors; i++) {
       CCMenu *menu = static_cast<CCMenu *>(m_colorButtons[i]->getChildByID(fmt::format("color-menu-{}", i)));
-      if (menu)menu->setVisible(show);
+      if (menu) menu->setVisible(show);
     }
   }
 
@@ -479,18 +562,30 @@ protected:
     return menu ? menu->isVisible() : false;
   }
 
+  int getCurrentColorLimit() {
+    int currentIndex = service.getPalettePool().currentItem;
+    int loadedColors = manager.m_loadedPalettes.size();
+    bool isCurrentLoaded = currentIndex >= service.getPalettePool().totalItems && loadedColors > 0;
+
+    /*since loaded palettes are always at the end of the pool, if the current index is greater than the total items in the pool, 
+    it means that we're in a loaded palette and we should iterate colors from palette size instead of requested colors */
+    int limit = isCurrentLoaded ? manager.getCurrentPalette().colors.size() : manager.getRequest().num_colors;
+    return limit;
+  }
+
   geode::Result<int> getIndexFromID(std::string id) {
     std::string_view numStr = std::string_view(id).substr(id.rfind('-') + 1);
     return geode::utils::numFromString<int>(numStr);
   }
 
   NineSlice* createColorSpr(int index, float width, float height) {
-    bool isCorner = (index == 0 || index == m_colors - 1);
+    int colors = getCurrentColorLimit();
+    bool isCorner = (index == 0 || index == colors - 1);
     const char* spriteName = isCorner ? "square02b_001.png" : "square.png";
     CCRect rect = isCorner ? CCRect{0, 0, 50, 80} : CCRect{0, 0, 80, 80};
 
     NineSlice* colorSpr = NineSlice::create(spriteName, rect);
-    colorSpr->setRotation(isCorner && index == m_colors - 1 ? 180.f : 0.f);
+    colorSpr->setRotation(isCorner && index == colors - 1 ? 180.f : 0.f);
     colorSpr->setContentSize({width, height});
     return colorSpr;
   }
