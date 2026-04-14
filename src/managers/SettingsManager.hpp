@@ -128,6 +128,7 @@ public:
   void swapColors(int indexFrom, int indexTo);
   void resetSettings();
   void resetPalettePool();
+  void resetLocks();
   void addPalette(const SavedPalette& palette);
   void removePalette(const std::string& id);
   void setLoaded(const std::string& id);

@@ -138,6 +138,11 @@ void SettingsManager::resetPalettePool()
     service.getPalettePool() = PaletteResult{};
 }
 
+void SettingsManager::resetLocks() 
+{
+    std::fill(m_request.palette.begin(), m_request.palette.end(), "-");
+}
+
 void SettingsManager::addPalette(const SavedPalette &palette)
 {
     service.getPalettePool().palettes.push_back(palette);
