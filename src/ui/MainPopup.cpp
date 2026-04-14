@@ -38,6 +38,7 @@ protected:
   CCMenu* m_navMenu;
   CCMenu* m_colorsMenu;
   CCMenu* m_testMenu;
+  bool m_isCustomPalette = false;
   bool m_isLoaded = false;
   int m_swapIndex = -1;
   const float width = 440.f;
@@ -54,6 +55,7 @@ protected:
 
     m_spinner = LoadingSpinner::create(30.f);
     m_isLoaded = service.getPalettePool().palettes.size() != 0;
+    m_isCustomPalette = isCurrentLoaded();
 
     auto resetSpr = CircleButtonSprite::create(
       // @geode-ignore(unknown-resource)
@@ -160,7 +162,7 @@ protected:
       colorMenu->updateLayout();
 
       //init button with a default values, this will be updated in updateUI and loadLastState
-      CCMenuItemSpriteExtra* item = CCMenuItemSpriteExtra::create(createColorSpr(i, 0.f, 0.f), this, menu_selector(MainPopup::onColorChannel));
+      CCMenuItemSpriteExtra* item = CCMenuItemSpriteExtra::create(createColorSpr(i, manager.getRequest().num_colors), this, menu_selector(MainPopup::onColorChannel));
       item->m_scaleMultiplier = 1.f;
       item->setVisible(false);
       item->addChildAtPosition(label, Anchor::TopRight, ccp(-10.f, -10.f));
@@ -169,9 +171,6 @@ protected:
 
       m_colorButtons[i] = item;
     }
-
-    // updates color channels and buttons based on the current settings
-    updateUI();
 
     m_nameInput = TextInput::create(150.f, "Palette name", goldFontName);
     m_nameInput->setString("Palette name");
@@ -260,7 +259,13 @@ protected:
     m_testMenu->addChild(settingsBtn);
     m_testMenu->addChild(m_test);
     
-    if (m_isLoaded) loadLastState();
+    if (m_isLoaded) {
+      loadLastState();
+    } else {
+      // updates color channels and buttons based on the current settings
+      updateUI(); 
+    } 
+    
 
     optionsMenu->updateLayout();
     mainMenu->updateLayout();
@@ -453,8 +458,9 @@ protected:
   }
 
   void updateColorSprites(std::vector<std::string> colors) {
+    int limit = getCurrentColorLimit();
     for (size_t i = 0; i < manager.MAX_COLORS; i++) {
-      updateColorButton(i);
+      updateColorButton(i, limit);
 
       if (i < colors.size()) {
         NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons[i]->getNormalImage());
@@ -475,16 +481,15 @@ protected:
             .c_str());
   }
 
-  void updateColorButton(int index) {
-    int colors = getCurrentColorLimit();
-    bool isVisible = index < colors;
+  void updateColorButton(int index, int limit) {
+    bool isVisible = index < limit;
     CCMenuItemSpriteExtra *btn = m_colorButtons[index];
 
     if (isVisible) {
       updateLockButton(index, manager.isColorLocked(index));
 
-      float width = cropWidth / colors;
-      btn->setNormalImage(createColorSpr(index, width, 100.f));
+      float width = cropWidth / limit;
+      btn->setNormalImage(createColorSpr(index, limit, width, 100.f));
       btn->setContentSize({width, 100.f});
       btn->updateSprite();
       btn->updateLayout();
@@ -563,14 +568,18 @@ protected:
   }
 
   int getCurrentColorLimit() {
-    int currentIndex = service.getPalettePool().currentItem;
-    int loadedColors = manager.m_loadedPalettes.size();
-    bool isCurrentLoaded = currentIndex >= service.getPalettePool().totalItems && loadedColors > 0;
+    m_isCustomPalette = isCurrentLoaded();
 
     /*since loaded palettes are always at the end of the pool, if the current index is greater than the total items in the pool, 
     it means that we're in a loaded palette and we should iterate colors from palette size instead of requested colors */
-    int limit = isCurrentLoaded ? manager.getCurrentPalette().colors.size() : manager.getRequest().num_colors;
+    int limit = m_isCustomPalette ? manager.getCurrentPalette().colors.size() : manager.getRequest().num_colors;
     return limit;
+  }
+
+  bool isCurrentLoaded() {
+    int currentIndex = service.getPalettePool().currentItem;
+    int loadedColors = manager.m_loadedPalettes.size();
+    return currentIndex >= service.getPalettePool().totalItems && loadedColors > 0;
   }
 
   geode::Result<int> getIndexFromID(std::string id) {
@@ -578,14 +587,23 @@ protected:
     return geode::utils::numFromString<int>(numStr);
   }
 
-  NineSlice* createColorSpr(int index, float width, float height) {
-    int colors = getCurrentColorLimit();
-    bool isCorner = (index == 0 || index == colors - 1);
-    const char* spriteName = isCorner ? "square02b_001.png" : "square.png";
-    CCRect rect = isCorner ? CCRect{0, 0, 50, 80} : CCRect{0, 0, 80, 80};
+  NineSlice* createColorSpr(int index, int limit, float width = 0.f, float height = 0.f) {
+    bool isCornerColor = index == limit - 2 || index == limit - 1;
+    bool shouldCreate = m_isCustomPalette || isCornerColor || (width == 0.f && height == 0.f);
+    NineSlice *colorSpr;
 
-    NineSlice* colorSpr = NineSlice::create(spriteName, rect);
-    colorSpr->setRotation(isCorner && index == colors - 1 ? 180.f : 0.f);
+    // only create for the last two colors, 
+    // the rest can reuse the same sprite since they will be tinted with different colors
+    if (shouldCreate) {
+      bool isCorner = (index == 0 || index == limit - 1);
+      const char *spriteName = isCorner ? "square02b_001.png" : "square.png";
+      CCRect rect = isCorner ? CCRect{0, 0, 50, 80} : CCRect{0, 0, 80, 80};
+
+      colorSpr = NineSlice::create(spriteName, rect);
+      colorSpr->setRotation(isCorner && index == limit - 1 ? 180.f : 0.f);
+    } else {
+      colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
+    }
     colorSpr->setContentSize({width, height});
     return colorSpr;
   }
