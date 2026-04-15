@@ -6,6 +6,7 @@ using namespace geode::prelude;
 
 class SavedPopup : public geode::Popup {
 public:
+  std::function<void()> onLoadPalette = [](){};
   static SavedPopup *create() {
     auto popup = new SavedPopup();
     if (popup->init()) {
@@ -219,6 +220,7 @@ protected:
     }
 
     updateUseBtn(paletteBtn, SettingsManager::get().isLoaded(paletteId));
+    onLoadPalette();
   }
 
   void onColorSelect(CCObject *sender) {

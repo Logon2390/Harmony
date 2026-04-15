@@ -9,7 +9,9 @@ SavedPalette &SettingsManager::getCurrentPalette() {
     return defaultPalette;
   }
 
+  int totalItems = service.getPalettePool().palettes.size();
   int currentIndex = service.getPalettePool().currentItem;
+  int index = currentIndex >= totalItems ? totalItems - 1 : currentIndex;  
   return service.getPalettePool().palettes.at(currentIndex);
 }
 

@@ -35,6 +35,8 @@ protected:
   CCMenuItemSpriteExtra* m_generate;
   CCMenuItemSpriteExtra* m_save;
   CCMenuItemSpriteExtra* m_test;
+  CCMenuItemSpriteExtra* m_prev;
+  CCMenuItemSpriteExtra* m_next;
   CCMenu* m_navMenu;
   CCMenu* m_colorsMenu;
   CCMenu* m_testMenu;
@@ -206,8 +208,8 @@ protected:
 
     CCSprite* prevSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
     CCSprite* nextSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
-    CCMenuItemSpriteExtra* m_prev = CCMenuItemSpriteExtra::create(prevSprite, this, menu_selector(MainPopup::onPrevPalette));
-    CCMenuItemSpriteExtra* m_next = CCMenuItemSpriteExtra::create(nextSprite, this, menu_selector(MainPopup::onNextPalette));
+    m_prev = CCMenuItemSpriteExtra::create(prevSprite, this, menu_selector(MainPopup::onPrevPalette));
+    m_next = CCMenuItemSpriteExtra::create(nextSprite, this, menu_selector(MainPopup::onNextPalette));
 
     m_navMenu->setEnabled(false);
     m_navMenu->setVisible(false);
@@ -264,7 +266,7 @@ protected:
       loadLastState();
     } else {
       // updates color channels and buttons based on the current settings
-      updateUI(); 
+      updateColorSprites(manager.getCurrentPalette().colors);
     } 
     
 
@@ -296,7 +298,16 @@ protected:
   }
 
   void onSave(CCObject *) {
-    SavedPopup::create()->show();
+    SavedPopup* popup = SavedPopup::create();
+    popup->show();
+    popup->onLoadPalette = [this]() {
+      this->m_isLoaded = true;
+      this->updateUI();
+      
+      if (this-> service.getPalettePool().palettes.size() <= 1) {
+        updateColorSprites(manager.getCurrentPalette().colors);
+      } 
+    };
   }
 
   void onHide(CCObject *) {
@@ -315,7 +326,7 @@ protected:
     auto settingsPopup = SettingsPopup::create();
     settingsPopup->show();
     settingsPopup->onColorsChanged = [this]() {
-      updateUI();
+      updateColorSprites(manager.getCurrentPalette().colors);
     };
   }
 
@@ -353,10 +364,7 @@ protected:
           self->data.clearSaved();
           self->manager.clearLoaded();
           self->updateColorSprites(result.colors);
-          self->updateInfoLabel();
-          self->updateNavigationButtons();
-          self->updateSaveButton();
-          self->updateNameInput();
+          self->updateUI();
         } else {
           FLAlertLayer::create("Error", "Failed to generate palette. Please try again.", "OK")->show();
         }
@@ -373,17 +381,17 @@ protected:
   }
 
   void onNextPalette(CCObject *sender) {
-    updateColorSprites(manager.getNextPalette().colors);
-    updateInfoLabel();
-    updateSaveButton();
-    updateNameInput();
+    if (service.getPalettePool().currentItem < service.getPalettePool().palettes.size() - 1) {
+      updateColorSprites(manager.getNextPalette().colors);
+      updateUI();
+    }
   }
 
   void onPrevPalette(CCObject *sender) {
-    updateColorSprites(manager.getPrevPalette().colors);
-    updateInfoLabel();
-    updateSaveButton();
-    updateNameInput();
+    if (service.getPalettePool().currentItem > 0) {
+      updateColorSprites(manager.getPrevPalette().colors);
+      updateUI();
+    }
   }
 
   void onLockColorChannel(CCObject *sender) {
@@ -438,6 +446,8 @@ protected:
         "Here you can adjust the settings for the color harmony simulation mode.",
         "OK")
         ->show();
+
+      simulation.m_isSetupStage = true;
   }
 
   void onSimulationInfo(CCObject *) {
@@ -465,6 +475,8 @@ protected:
   }
 
   void updateInfoLabel() {
+    if (!m_isLoaded) return m_infoLabel->setString("");
+
     m_infoLabel->setString(
         fmt::format("Results: {} - {}",
                     service.getPalettePool().currentItem + 1,
@@ -489,6 +501,21 @@ protected:
   }
 
   void updateNavigationButtons() {
+    if (m_isLoaded) {
+      int currentIndex = service.getPalettePool().currentItem;
+      int totalItems = service.getPalettePool().palettes.size();
+      int prevOpacity = currentIndex > 0 ? 255 : 200;
+      int nextOpacity = currentIndex < totalItems - 1 ? 255 : 200;
+
+      m_prev->setOpacity(prevOpacity);
+      m_next->setOpacity(nextOpacity);
+      m_prev->setEnabled(currentIndex > 0);
+      m_next->setEnabled(currentIndex < totalItems - 1);
+      m_prev->setVisible(totalItems > 1);
+      m_next->setVisible(totalItems > 1);
+      
+    }
+
     m_navMenu->setEnabled(m_isLoaded);
     m_navMenu->setVisible(m_isLoaded);
   }
@@ -503,6 +530,7 @@ protected:
   }
 
   void updateSaveButton() {
+    if (!m_isLoaded) return;
     bool isSaved = data.isSaved(HueMintService::get().getPalettePool().currentItem);
     bool isLoaded = SettingsManager::get().isLoaded(manager.getCurrentPalette().id);
     std::string title = isSaved ? "Saved" : isLoaded ? "Update" : "Save";
@@ -517,7 +545,7 @@ protected:
       m_nameInput->setString("Palette name");
       return;
     }
-    std::string name = service.getPalettePool().palettes.at(service.getPalettePool().currentItem).name;
+    std::string name = manager.getCurrentPalette().name;
     m_nameInput->setString(name.empty() ? "Palette name" : name.c_str());
   }
 
@@ -529,8 +557,10 @@ protected:
   }
 
   void updateUI() {
-    updateColorSprites(manager.getCurrentPalette().colors);
-    m_colorsMenu->updateLayout();
+    updateInfoLabel();
+    updateSaveButton();
+    updateNameInput();
+    updateNavigationButtons();
   }
 
   void handleReset() {
@@ -539,10 +569,8 @@ protected:
     manager.clearLoaded();
     manager.resetLocks();
 
-    updateNavigationButtons();
     updateColorSprites(manager.getCurrentPalette().colors);
-    m_infoLabel->setString("");
-    m_colorsMenu->updateLayout();
+    updateUI();
   }
 
   void handleHide(bool show) {
