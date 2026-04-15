@@ -40,7 +40,6 @@ protected:
   CCMenu* m_navMenu;
   CCMenu* m_colorsMenu;
   CCMenu* m_testMenu;
-  bool m_isCustomPalette = false;
   bool m_isLoaded = false;
   int m_swapIndex = -1;
   const float width = 440.f;
@@ -57,7 +56,6 @@ protected:
 
     m_spinner = LoadingSpinner::create(30.f);
     m_isLoaded = service.getPalettePool().palettes.size() != 0;
-    m_isCustomPalette = isCurrentLoaded();
 
     auto resetSpr = CircleButtonSprite::create(
       // @geode-ignore(unknown-resource)
@@ -165,14 +163,15 @@ protected:
       colorMenu->updateLayout();
 
       //init button with a default values, this will be updated in updateUI and loadLastState
-      CCMenuItemSpriteExtra* item = CCMenuItemSpriteExtra::create(createColorSpr(i, manager.getRequest().num_colors), this, menu_selector(MainPopup::onColorChannel));
+      CCMenuItemSpriteExtra* item = CCMenuItemSpriteExtra::create(CCSprite::create(), this, menu_selector(MainPopup::onColorChannel));
+      m_colorButtons[i] = item;
+
       item->m_scaleMultiplier = 1.f;
+      item->setNormalImage(createColorSpr(i, manager.getRequest().num_colors));
       item->setVisible(false);
       item->addChildAtPosition(label, Anchor::TopRight, ccp(-10.f, -10.f));
       item->addChildAtPosition(colorMenu, Anchor::Center);
       m_colorsMenu->addChild(item);
-
-      m_colorButtons[i] = item;
     }
 
     m_nameInput = TextInput::create(150.f, "Palette name", goldFontName);
@@ -303,7 +302,7 @@ protected:
     popup->onLoadPalette = [this]() {
       this->m_isLoaded = true;
       this->updateUI();
-      
+
       if (this-> service.getPalettePool().palettes.size() <= 1) {
         updateColorSprites(manager.getCurrentPalette().colors);
       } 
@@ -587,37 +586,35 @@ protected:
   }
 
   int getCurrentColorLimit() {
-    m_isCustomPalette = isCurrentLoaded();
+    int currentIndex = service.getPalettePool().currentItem;
+    int loadedColors = manager.m_loadedPalettes.size();
+    bool isCustomPalette = currentIndex >= service.getPalettePool().totalItems && loadedColors > 0;
 
-    /*since loaded palettes are always at the end of the pool, if the current index is greater than the total items in the pool, 
+    /* since loaded palettes are always at the end of the pool, if the current index is greater than the total items in the pool, 
     it means that we're in a loaded palette and we should iterate colors from palette size instead of requested colors */
-    int limit = m_isCustomPalette ? manager.getCurrentPalette().colors.size() : manager.getRequest().num_colors;
+    int limit = isCustomPalette ? manager.getCurrentPalette().colors.size() : manager.getRequest().num_colors;
     return limit;
   }
 
-  bool isCurrentLoaded() {
-    int currentIndex = service.getPalettePool().currentItem;
-    int loadedColors = manager.m_loadedPalettes.size();
-    return currentIndex >= service.getPalettePool().totalItems && loadedColors > 0;
-  }
-
   NineSlice* createColorSpr(int index, int limit, float width = 0.f, float height = 0.f) {
-    bool isCornerColor = index == limit - 2 || index == limit - 1;
-    bool shouldCreate = m_isCustomPalette || isCornerColor || (width == 0.f && height == 0.f);
+    CCMenuItemSpriteExtra* colorBtn = m_colorButtons[index];
+    bool flag = colorBtn->getUserFlag("corner"_spr);
+    bool isRightCorner = index == limit - 1;
+    bool init = width == 0.f && height == 0.f;
+    bool create = init || isRightCorner && !flag || flag && !isRightCorner;
     NineSlice *colorSpr;
 
-    // only create for the last two colors, 
-    // the rest can reuse the same sprite since they will be tinted with different colors
-    if (shouldCreate) {
-      bool isCorner = (index == 0 || index == limit - 1);
+    if (create) {
+      bool isCorner = index == 0 || index == limit - 1;
       const char *spriteName = isCorner ? "square02b_001.png" : "square.png";
       CCRect rect = isCorner ? CCRect{0, 0, 50, 80} : CCRect{0, 0, 80, 80};
 
       colorSpr = NineSlice::create(spriteName, rect);
       colorSpr->setRotation(isCorner && index == limit - 1 ? 180.f : 0.f);
     } else {
-      colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
+      colorSpr = static_cast<NineSlice *>(colorBtn->getNormalImage());
     }
+    colorBtn->setUserFlag("corner"_spr, isRightCorner);
     colorSpr->setContentSize({width, height});
     return colorSpr;
   }
