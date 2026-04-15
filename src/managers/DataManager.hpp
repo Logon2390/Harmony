@@ -46,7 +46,7 @@ class DataManager {
         std::vector<SavedPalette> getPaletteByName(const std::string& name);
         std::vector<SavedPalette> getFavoritePalettes();
         SavedPalette getPaletteByID(const std::string& id);
-        void create(SavedPalette &palette, const std::string &name);
+        void create(SavedPalette palette, const std::string &name);
         void update(const SavedPalette &palette);
         void remove(const std::string& id);
         void setFavorite(const std::string& id);

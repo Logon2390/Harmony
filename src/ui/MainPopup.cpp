@@ -372,6 +372,25 @@ protected:
   }
 
   void onSavePalette(CCObject *sender) {
+    SavedPalette &palette = manager.getCurrentPalette();
+    if (manager.isLoaded(palette.id)) {      
+      geode::createQuickPopup(
+        "Update palette",
+        "Do you want to update this palette?",
+        "Copy", "Update", [this, palette](auto, bool btn2) {
+          if (btn2) {
+            manager.setPaletteName(m_nameInput->getString());
+            data.update(palette);
+            Notification::create("Palette updated", NotificationIcon::Success)->show();
+          } else {
+            data.create(manager.getCurrentPalette(), m_nameInput->getString());
+            Notification::create("Palette saved as new", NotificationIcon::Success)->show();
+          }
+        }
+      );
+      return;
+   }
+
     data.create(manager.getCurrentPalette(), m_nameInput->getString());
     data.setSaved(service.getPalettePool().currentItem);
     updateSaveButton();
@@ -567,6 +586,7 @@ protected:
     manager.resetPalettePool();
     manager.clearLoaded();
     manager.resetLocks();
+    data.clearSaved();
 
     updateColorSprites(manager.getCurrentPalette().colors);
     updateUI();

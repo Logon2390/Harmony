@@ -107,6 +107,12 @@ void SettingsManager::setTemperature(float temperature)
     m_request.temperature = temperature;
 }
 
+void SettingsManager::setPaletteName(const std::string &name)
+{
+    auto& palette = getCurrentPalette();
+    palette.name = name;
+}
+
 void SettingsManager::toggleColorLock(int index, std::string colorHex) 
 {
     if (index < 0 || index >= m_request.num_colors) return;

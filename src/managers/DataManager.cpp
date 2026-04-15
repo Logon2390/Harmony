@@ -1,6 +1,6 @@
 #include "DataManager.hpp"
 
-void DataManager::create(SavedPalette &palette, const std::string &name) {
+void DataManager::create(SavedPalette palette, const std::string &name) {
 
   auto id = random::generateUUID();
   palette.id = id;

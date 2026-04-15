@@ -122,6 +122,7 @@ public:
   void setMaxColors(int numColors);
   void setNumResults(int numResults);
   void setTemperature(float temperature);
+  void setPaletteName(const std::string& name);
   void toggleColorLock(int index, std::string colorHex);
   bool isColorLocked(int index);
   bool isColorLocked(std::string colorHex);
