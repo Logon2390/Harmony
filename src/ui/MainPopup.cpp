@@ -151,7 +151,8 @@ protected:
       swapBtn->m_scaleMultiplier = 1.1f;
 
       CCMenu* colorMenu = CCMenu::create();
-      colorMenu->setID(fmt::format("color-menu-{}", i));
+      colorMenu->setID("menu");
+      colorMenu->setUserObject(CCInteger::create(i));
       colorMenu->setScale(0.6f);
       colorMenu->setZOrder(3);
       colorMenu->setContentSize(ccp(20.f, 60.f));
@@ -388,52 +389,42 @@ protected:
   void onLockColorChannel(CCObject *sender) {
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
     auto menu = static_cast<CCMenu *>(item->getParent());
-    auto result = getIndexFromID(menu->getID());
+    int index = static_cast<CCInteger*>(menu->getUserObject())->getValue();
 
-    if (result.ok()) {
-      int index = result.unwrap();
-
-      NineSlice * colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
-      manager.toggleColorLock(index, utils.colorToHex(colorSpr->getColor()));
-      updateLockButton(index, manager.isColorLocked(index));
-    }
+    NineSlice * colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
+    manager.toggleColorLock(index, utils.colorToHex(colorSpr->getColor()));
+    updateLockButton(index, manager.isColorLocked(index));
   }
 
   void onSwapColorChannel(CCObject *sender) {
-      auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
-      auto menu = static_cast<CCMenu *>(item->getParent());
-      auto result = getIndexFromID(menu->getID());
+    auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
+    auto menu = static_cast<CCMenu *>(item->getParent());
+    int index = static_cast<CCInteger *>(menu->getUserObject())->getValue();
 
-      if (result.ok()) {
-        int index = result.unwrap();
-        if (manager.isColorLocked(index)) {
-          FLAlertLayer::create("This color is locked", "Unlock this color to swap it.", "OK")->show();
-          return;
-        }
-
-        if (m_swapIndex == -1) {
-          //TODO: change the color of the button sprite to indicate that it's selected
-          m_swapIndex = index;
-          Notification::create("Select a color to swap with", NotificationIcon::Info)->show();
-          return;
-        }
-
-        manager.swapColors(m_swapIndex, index);
-        updateColorSprites(manager.getCurrentPalette().colors);
-        m_swapIndex = -1;
-      }
+    if (manager.isColorLocked(index)) {
+      FLAlertLayer::create("This color is locked", "Unlock this color to swap it.", "OK")->show();
+      return;
     }
+
+    if (m_swapIndex == -1) {
+      // TODO: change the color of the button sprite to indicate that it's selected
+      m_swapIndex = index;
+      Notification::create("Select a color to swap with", NotificationIcon::Info)->show();
+      return;
+    }
+
+    manager.swapColors(m_swapIndex, index);
+    updateColorSprites(manager.getCurrentPalette().colors);
+    m_swapIndex = -1;
+  }
 
   void onColorChannelHarmonies(CCObject *sender) {
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
     auto menu = static_cast<CCMenu *>(item->getParent());
-    auto result = getIndexFromID(menu->getID());
+    int index = static_cast<CCInteger*>(menu->getUserObject())->getValue();
 
-    if (result.ok()) {
-      int index = result.unwrap();
-      auto colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
-      HarmonyPopup::create(colorSpr->getColor())->show();
-    }
+    auto colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
+    HarmonyPopup::create(colorSpr->getColor())->show();
   }
 
   void onSimulationToggle(CCObject *) {
@@ -557,13 +548,13 @@ protected:
   void handleHide(bool show) {
     int colors = getCurrentColorLimit();
     for (int i = 0; i < colors; i++) {
-      CCMenu *menu = static_cast<CCMenu *>(m_colorButtons[i]->getChildByID(fmt::format("color-menu-{}", i)));
+      CCMenu *menu = static_cast<CCMenu *>(m_colorButtons[i]->getChildByID("menu"));
       if (menu) menu->setVisible(show);
     }
   }
 
   bool isColorMenuVisible() {
-    CCMenu *menu = static_cast<CCMenu *>(m_colorButtons[0]->getChildByID(fmt::format("color-menu-{}", 0)));
+    CCMenu *menu = static_cast<CCMenu *>(m_colorButtons[0]->getChildByID("menu"));
     return menu ? menu->isVisible() : false;
   }
 
@@ -580,11 +571,6 @@ protected:
     int currentIndex = service.getPalettePool().currentItem;
     int loadedColors = manager.m_loadedPalettes.size();
     return currentIndex >= service.getPalettePool().totalItems && loadedColors > 0;
-  }
-
-  geode::Result<int> getIndexFromID(std::string id) {
-    std::string_view numStr = std::string_view(id).substr(id.rfind('-') + 1);
-    return geode::utils::numFromString<int>(numStr);
   }
 
   NineSlice* createColorSpr(int index, int limit, float width = 0.f, float height = 0.f) {

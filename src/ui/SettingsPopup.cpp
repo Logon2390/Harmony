@@ -170,10 +170,10 @@ protected:
     int current = manager.getRequest().num_colors;
     if (current > SettingsManager::MIN_COLORS) {
       manager.setMaxColors(current - 1);
-      m_colors->setString(std::to_string(current - 1).c_str());
+      m_colors->setString(geode::utils::numToString(current - 1));
     } else {
       manager.setMaxColors(SettingsManager::MAX_COLORS);
-      m_colors->setString(std::to_string(SettingsManager::MAX_COLORS).c_str());
+      m_colors->setString(geode::utils::numToString(SettingsManager::MAX_COLORS));
     }
     onColorsChanged();
   }
@@ -182,10 +182,10 @@ protected:
     int current = manager.getRequest().num_colors;
     if (current < SettingsManager::MAX_COLORS) {
       manager.setMaxColors(current + 1);
-      m_colors->setString(std::to_string(current + 1).c_str());
+      m_colors->setString(geode::utils::numToString(current + 1));
     } else {
       manager.setMaxColors(SettingsManager::MIN_COLORS);
-      m_colors->setString(std::to_string(SettingsManager::MIN_COLORS).c_str());
+      m_colors->setString(geode::utils::numToString(SettingsManager::MIN_COLORS));
     }
     onColorsChanged();
   }
@@ -194,10 +194,10 @@ protected:
     float current = manager.getRequest().temperature;
     if (current > SettingsManager::MIN_TEMPERATURE) {
       manager.setTemperature(current - 0.1f);
-      m_temperature->setString(std::to_string(current - 0.1f).erase(3).c_str());
+      m_temperature->setString(geode::utils::numToString(current - 0.1f, 1));
     } else {
       manager.setTemperature(SettingsManager::MAX_TEMPERATURE);
-      m_temperature->setString(std::to_string(SettingsManager::MAX_TEMPERATURE).c_str());
+      m_temperature->setString(geode::utils::numToString(SettingsManager::MAX_TEMPERATURE, 1));
     }
   }
 
@@ -205,54 +205,63 @@ protected:
     float current = manager.getRequest().temperature;
     if (current < SettingsManager::MAX_TEMPERATURE) {
       manager.setTemperature(current + 0.1f);
-      m_temperature->setString(std::to_string(current + 0.1f).erase(3).c_str());
+      m_temperature->setString(geode::utils::numToString(current + 0.1f, 1));
     } else {
       manager.setTemperature(SettingsManager::MIN_TEMPERATURE);
-      m_temperature->setString(std::to_string(SettingsManager::MIN_TEMPERATURE).c_str());
+      m_temperature->setString(geode::utils::numToString(SettingsManager::MIN_TEMPERATURE, 1));
     }
   }
 
   void onDecreaseResults(CCObject *) {
-    int current = static_cast<int>(std::strtol(m_results->getString().c_str(), nullptr, 10));
+    int current = static_cast<int>(geode::utils::numFromString<int>(m_results->getString()).unwrapOr(10));
     if (current > SettingsManager::MIN_RESULTS) {
       manager.setNumResults(current - 1);
-      m_results->setString(std::to_string(current - 1).c_str());
+      m_results->setString(geode::utils::numToString(current - 1));
     } else {
       manager.setNumResults(SettingsManager::MAX_RESULTS);
-      m_results->setString(std::to_string(SettingsManager::MAX_RESULTS).c_str());
+      m_results->setString(geode::utils::numToString(SettingsManager::MAX_RESULTS));
     }
   }
 
   void onIncreaseResults(CCObject *) {
-    int current = static_cast<int>(std::strtol(m_results->getString().c_str(), nullptr, 10));
+    int current = static_cast<int>(geode::utils::numFromString<int>(m_results->getString()).unwrapOr(10));
     if (current < SettingsManager::MAX_RESULTS) {
       manager.setNumResults(current + 1);
-      m_results->setString(std::to_string(current + 1).c_str());
+      m_results->setString(geode::utils::numToString(current + 1));
     } else {
       manager.setNumResults(SettingsManager::MIN_RESULTS);
-      m_results->setString(std::to_string(SettingsManager::MIN_RESULTS).c_str());
+      m_results->setString(geode::utils::numToString(SettingsManager::MIN_RESULTS));
     }
   }
 
   void onColorsInput(gd::string input) {
-    int value = static_cast<int>(std::strtol(input.c_str(), nullptr, 10));
-    if (value < SettingsManager::MIN_COLORS || value > SettingsManager::MAX_COLORS) return;
-    manager.setMaxColors(value);
-    onColorsChanged();
+    auto result = geode::utils::numFromString<int>(input);
+
+    if (result.isOk()) {
+      int value = result.unwrap();
+      if (value < SettingsManager::MIN_COLORS || value > SettingsManager::MAX_COLORS) return;
+      manager.setMaxColors(value);
+      onColorsChanged();
+    }
   }
 
   void onTemperatureInput(gd::string input) {
-    float value = static_cast<float>(std::strtof(input.c_str(), nullptr));
-    if (value < SettingsManager::MIN_TEMPERATURE || value > SettingsManager::MAX_TEMPERATURE) return;
+    auto result = geode::utils::numFromString<float>(input);
 
-    manager.setTemperature(value);
+    if (result.isOk()) {
+      float value  = result.unwrap();
+      if (value < SettingsManager::MIN_TEMPERATURE || value > SettingsManager::MAX_TEMPERATURE) return;
+      manager.setTemperature(value);
+    }
   }
 
   void onResultsInput(gd::string input) {
-    int value = static_cast<int>(std::strtol(input.c_str(), nullptr, 10));
-    if (value < SettingsManager::MIN_RESULTS || value > SettingsManager::MAX_RESULTS) return;
-
-    manager.setNumResults(value);
+    auto result = geode::utils::numFromString<int>(input);
+    if (result.isOk()) {
+      int value = result.unwrap();
+      if (value < SettingsManager::MIN_RESULTS || value > SettingsManager::MAX_RESULTS) return;
+      manager.setNumResults(value);
+    }
   }
 
   void onAdjacency(CCObject *) {}
@@ -273,14 +282,14 @@ protected:
   void updateFields() {
     m_mode->setString(manager.getRequest().mode.c_str());
     m_preset->setString(manager.getRequest().preset.c_str());
-    m_colors->setString(std::to_string(manager.getRequest().num_colors).c_str());
-    m_temperature->setString(std::to_string(manager.getRequest().temperature).erase(3).c_str());
+    m_colors->setString(geode::utils::numToString(manager.getRequest().num_colors));
+    m_temperature->setString(geode::utils::numToString(manager.getRequest().temperature, 1));
 
     int results = (
       service.getPalettePool().palettes.size() == 0)
       ? 10 : service.getPalettePool().palettes.size();
 
-    m_results->setString(std::to_string(results).c_str());
+    m_results->setString(geode::utils::numToString(results));
   }
 
   void onModeInfo(CCObject *) {
