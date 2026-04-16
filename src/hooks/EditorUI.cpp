@@ -1,6 +1,7 @@
 #include <Geode/modify/EditorUI.hpp>
 #include "../ui/MainPopup.cpp"
 #include "../managers/DataManager.hpp"
+#include "../managers/SimulationManager.hpp"
 
 using namespace geode::prelude;
 
@@ -20,6 +21,17 @@ class $modify(MyEditorUI, EditorUI) {
         m_fields->mainBtn = CCMenuItemSpriteExtra::create(sprite, this, menu_selector(MyEditorUI::onMainPopup));
         m_fields->mainBtn->setContentSize(ccp(40.f, 40.f));
         m_fields->mainBtn->setID("harmony-button"_spr);
+
+        LevelSettingsObject* settings = this->m_editorLayer->m_levelSettings;
+        GJEffectManager* effectManager = settings->m_effectManager;
+
+        if (effectManager) {
+            SimulationManager::get().m_effectManager = effectManager;
+        }
+
+        if (settings) {
+            SimulationManager::get().m_settings = settings;
+        }
 
         auto menu = this->getChildByID("editor-buttons-menu");
 
