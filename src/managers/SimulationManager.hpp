@@ -15,17 +15,17 @@ class SimulationManager : public ConfigureValuePopupDelegate {
         }
         int getMaxColorCount();
         void setup(int colorID, int colorIndex);
-        void update(SavedPalette palette);
         void remove(int colorID);
         void reset() { m_colorSettings.clear(); }
         bool restore();
         bool replace();
         bool toggleSimulation();
         bool isColorSetup(int colorID);
+        void saveOrginalColorActions();
         const bool isActive() const { return m_isActive; }
         const int getColors() const { return m_colors; }
         const std::unordered_map<int, int>& getColorSettings() const { return m_colorSettings; }
-        void saveOrginalColorActions();
+        std::function<void()> onSimulationToggled = []() {};
         void valuePopupClosed(ConfigureValuePopup* popup, float value) override;
 
     private:
@@ -33,5 +33,6 @@ class SimulationManager : public ConfigureValuePopupDelegate {
         std::unordered_map<int, int> m_colorSettings; //colorID -> colorIndex
         bool m_isActive = false;
         int m_colors = 2;
+        bool toggleSimulationFlag();
         SimulationManager() = default;
 };

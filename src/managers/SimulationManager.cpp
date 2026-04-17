@@ -7,8 +7,6 @@ SettingsManager& settings = SettingsManager::get();
 
 bool SimulationManager::restore() 
 {
-    m_isActive = false;
-
     for (auto& [colorID, colorAction] : m_colorActions) {
         if (!colorAction) continue;
         m_effectManager->setColorAction(colorAction, colorID);
@@ -28,16 +26,10 @@ void SimulationManager::setup(int colorID, int colorIndex)
     Notification::create(fmt::format("Color channel {} setup with color {}", colorID , colorIndex + 1).c_str(), NotificationIcon::Info)->show();
 }
 
-void SimulationManager::update(SavedPalette palette) 
-{
-    replace();
-}
-
 bool SimulationManager::replace() 
 {
-    if (!m_isActive) saveOrginalColorActions();
+    if (m_colorActions.empty()) saveOrginalColorActions();
 
-    m_isActive = true;
     auto currentPalette = settings.getCurrentPalette();
     int paletteSize = static_cast<int>(currentPalette.colors.size());
 
@@ -57,7 +49,9 @@ void SimulationManager::remove(int colorID)
 
 bool SimulationManager::toggleSimulation()
 {
-    if (m_isActive) return restore();
+    toggleSimulationFlag();
+
+    if (!m_isActive) return restore();
     return replace();
 }
 
@@ -106,12 +100,18 @@ void SimulationManager::saveOrginalColorActions()
     }
 }
 
-void SimulationManager::valuePopupClosed(ConfigureValuePopup *popup,
-                                         float value) {
+void SimulationManager::valuePopupClosed(ConfigureValuePopup *popup, float value) {
   int colorIndex = static_cast<int>(value);
   colorIndex = colorIndex - 1; // color index is 0-based, but the popup shows 1-based index
   if (colorIndex < 0 || colorIndex >= getMaxColorCount()) return;
 
   // link color channel ID with color index in the palette
   setup(m_selectedColorID, colorIndex);
+}
+
+bool SimulationManager::toggleSimulationFlag()
+{
+    m_isActive = !m_isActive;
+    onSimulationToggled();
+    return m_isActive;
 }
