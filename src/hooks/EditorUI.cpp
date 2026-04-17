@@ -1,5 +1,6 @@
 #include <Geode/modify/EditorUI.hpp>
 #include "../ui/MainPopup.cpp"
+#include "../ui/SimulationOverlay.cpp"
 #include "../managers/DataManager.hpp"
 #include "../managers/SimulationManager.hpp"
 
@@ -9,6 +10,7 @@ class $modify(MyEditorUI, EditorUI) {
 
     struct Fields {
         CCMenuItemSpriteExtra* mainBtn;
+        SimulationOverlay* simulationOverlay;
     };
 
     bool init(LevelEditorLayer* layer) {
@@ -16,7 +18,7 @@ class $modify(MyEditorUI, EditorUI) {
 
         //pre-load data
         DataManager::get().load();
-        
+
         auto sprite = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName("icon.png"_spr), EditorBaseColor::LightBlue);
         m_fields->mainBtn = CCMenuItemSpriteExtra::create(sprite, this, menu_selector(MyEditorUI::onMainPopup));
         m_fields->mainBtn->setContentSize(ccp(40.f, 40.f));
@@ -32,6 +34,16 @@ class $modify(MyEditorUI, EditorUI) {
         if (settings) {
             SimulationManager::get().m_settings = settings;
         }
+
+        m_fields->simulationOverlay = SimulationOverlay::create();
+        m_fields->simulationOverlay->setPosition({ 260.f, 130.f });
+        this->addChild(m_fields->simulationOverlay);
+        
+        SimulationManager::get().onSimulationToggled = [this]() {
+            if (m_fields->simulationOverlay) {
+                m_fields->simulationOverlay->onToggleVisibility();
+            }
+        };
 
         auto menu = this->getChildByID("editor-buttons-menu");
 
@@ -49,6 +61,9 @@ class $modify(MyEditorUI, EditorUI) {
 
     void showUI(bool show) {
         m_fields->mainBtn->setVisible(show);
+        if (m_fields->simulationOverlay) {
+            m_fields->simulationOverlay->setVisible(show && SimulationManager::get().isActive());
+        }
 		return EditorUI::showUI(show);
     }
 };
