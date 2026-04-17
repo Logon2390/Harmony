@@ -141,6 +141,12 @@ void SettingsManager::swapColors(int indexFrom, int indexTo)
     std::swap(getCurrentPalette().colors.at(indexFrom), getCurrentPalette().colors.at(indexTo));
 }
 
+void SettingsManager::shufflePalette() 
+{
+    auto& palette = getCurrentPalette();
+    utils::random::shuffle<std::vector<std::string>::iterator>(palette.colors.begin(), palette.colors.end());
+}
+
 void SettingsManager::resetPalettePool() 
 {
     service.getPalettePool() = PaletteResult{};

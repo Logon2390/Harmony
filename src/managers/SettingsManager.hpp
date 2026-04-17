@@ -127,6 +127,7 @@ public:
   bool isColorLocked(int index);
   bool isColorLocked(std::string colorHex);
   void swapColors(int indexFrom, int indexTo);
+  void shufflePalette();
   void resetSettings();
   void resetPalettePool();
   void resetLocks();
