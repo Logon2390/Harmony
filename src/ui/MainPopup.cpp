@@ -402,6 +402,11 @@ protected:
     if (service.getPalettePool().currentItem < service.getPalettePool().palettes.size() - 1) {
       updateColorSprites(manager.getNextPalette().colors);
       updateUI();
+
+      if (simulation.isActive()) {
+        simulation.replace();
+        onPalettePoolChanged();
+      } 
     }
   }
 
@@ -409,6 +414,11 @@ protected:
     if (service.getPalettePool().currentItem > 0) {
       updateColorSprites(manager.getPrevPalette().colors);
       updateUI();
+
+      if (simulation.isActive()) {
+        simulation.replace();
+        onPalettePoolChanged();
+      }
     }
   }
 
@@ -650,6 +660,7 @@ protected:
     }
     colorBtn->setUserFlag("corner"_spr, isRightCorner);
     colorSpr->setContentSize({width, height});
+    colorSpr->setColor({255, 255, 255});
     return colorSpr;
   }
 
