@@ -24,7 +24,8 @@ class SimulationManager : public ConfigureValuePopupDelegate {
         void saveOrginalColorActions();
         const bool isActive() const { return m_isActive; }
         const int getColors() const { return m_colors; }
-        const std::unordered_map<int, int>& getColorSettings() const { return m_colorSettings; }
+        const int getSavedColors() const { return static_cast<int>(m_colorActions.size()); }
+        const int getAffectedColors() const { return static_cast<int>(m_colorSettings.size()); }
         std::function<void()> onSimulationToggled = []() {};
         void valuePopupClosed(ConfigureValuePopup* popup, float value) override;
 

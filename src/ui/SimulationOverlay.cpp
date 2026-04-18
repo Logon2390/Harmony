@@ -24,6 +24,10 @@ public:
     updateNavigationButtons();
     updateInfoLabel();
   }
+  void refresh() {
+    updateNavigationButtons();
+    updateInfoLabel();
+  }
 
 protected:
   SimulationManager &simulation = SimulationManager::get();
@@ -41,7 +45,7 @@ protected:
   bool m_isHidden = false;
 
   bool init() {
-    if (!this->initWithFile(SpriteBuilder::backgroundSpriteName, {0.0f, 0.0f, 80.0f, 80.0f}, {})) return false;
+    if (!this->initWithFile(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f}, {})) return false;
 
     this->setContentSize({width, height});
     this->setColor({ 0, 0, 0 });
@@ -53,10 +57,10 @@ protected:
     m_menu->setContentSize({width, height});
     this->addChildAtPosition(m_menu, Anchor::Center);
 
-    m_next = CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(true, 0.4f), this, menu_selector(SimulationOverlay::onNext));
+    m_next = CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Pink, true, 0.4f), this, menu_selector(SimulationOverlay::onNext));
     m_menu->addChildAtPosition(m_next, Anchor::Right, ccp(-20.f, 0.f));
 
-    m_prev = CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(false, 0.4f), this, menu_selector(SimulationOverlay::onPrev));
+    m_prev = CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Pink, false, 0.4f), this, menu_selector(SimulationOverlay::onPrev));
     m_menu->addChildAtPosition(m_prev, Anchor::Right, ccp(-50.f, 0.f));
 
     m_label = CCLabelBMFont::create("", SpriteBuilder::bigFontName);

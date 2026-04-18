@@ -7,6 +7,7 @@ SettingsManager& settings = SettingsManager::get();
 
 bool SimulationManager::restore() 
 {
+    if (m_colorActions.empty()) return false;
     for (auto& [colorID, colorAction] : m_colorActions) {
         if (!colorAction) continue;
         m_effectManager->setColorAction(colorAction, colorID);
@@ -28,6 +29,7 @@ void SimulationManager::setup(int colorID, int colorIndex)
 
 bool SimulationManager::replace() 
 {
+    if (!m_isActive) return false;
     if (m_colorActions.empty()) saveOrginalColorActions();
 
     auto currentPalette = settings.getCurrentPalette();

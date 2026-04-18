@@ -11,6 +11,7 @@ class $modify(MyEditorUI, EditorUI) {
     struct Fields {
         CCMenuItemSpriteExtra* mainBtn;
         SimulationOverlay* simulationOverlay;
+        SimulationManager& manager = SimulationManager::get();
     };
 
     bool init(LevelEditorLayer* layer) {
@@ -28,18 +29,18 @@ class $modify(MyEditorUI, EditorUI) {
         GJEffectManager* effectManager = settings->m_effectManager;
 
         if (effectManager) {
-            SimulationManager::get().m_effectManager = effectManager;
+            m_fields->manager.m_effectManager = effectManager;
         }
 
         if (settings) {
-            SimulationManager::get().m_settings = settings;
+            m_fields->manager.m_settings = settings;
         }
 
         m_fields->simulationOverlay = SimulationOverlay::create();
         m_fields->simulationOverlay->setPosition({ 260.f, 130.f });
         this->addChild(m_fields->simulationOverlay);
         
-        SimulationManager::get().onSimulationToggled = [this]() {
+        m_fields->manager.onSimulationToggled = [this]() {
             if (m_fields->simulationOverlay) {
                 m_fields->simulationOverlay->onToggleVisibility();
             }
@@ -56,13 +57,18 @@ class $modify(MyEditorUI, EditorUI) {
     }
 
     void onMainPopup(CCObject*) {
-        MainPopup::create()->show();
+        MainPopup* popup = MainPopup::create();
+        popup->onPalettePoolChanged = [this]() {
+            m_fields->simulationOverlay->refresh();
+        };
+
+        popup->show();
     }
 
     void showUI(bool show) {
         m_fields->mainBtn->setVisible(show);
         if (m_fields->simulationOverlay) {
-            m_fields->simulationOverlay->setVisible(show && SimulationManager::get().isActive());
+            m_fields->simulationOverlay->setVisible(show && m_fields->manager.isActive());
         }
 		return EditorUI::showUI(show);
     }
