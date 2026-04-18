@@ -1,6 +1,7 @@
 #include "../managers/DataManager.hpp"
 #include "../managers/SettingsManager.hpp"
 #include "../utils/ColorUtils.hpp"
+#include "../builders/SpriteBuilder.hpp"
 
 using namespace geode::prelude;
 
@@ -40,7 +41,7 @@ protected:
     m_totalItems = m_items.size();
 
     if (m_totalItems == 0) {
-      CCLabelBMFont* label = CCLabelBMFont::create("No saved palettes!", "goldFont.fnt");
+      CCLabelBMFont* label = CCLabelBMFont::create("No saved palettes!", SpriteBuilder::goldFontName);
       label->setScale(0.7f);
       m_mainLayer->addChildAtPosition(label, Anchor::Center);
       return true;
@@ -49,7 +50,7 @@ protected:
     // reverse the vector to show the most recent palettes first
     std::reverse(m_items.begin(), m_items.end());
 
-    m_pageLabel = CCLabelBMFont::create("", "goldFont.fnt");
+    m_pageLabel = CCLabelBMFont::create("", SpriteBuilder::goldFontName);
     m_pageLabel->setScale(0.4f);
     m_pageLabel->setAnchorPoint({1.f, 0.5f});
 
@@ -60,14 +61,11 @@ protected:
     m_searchInput->setAnchorPoint({0.f, 0.5f});
     m_searchInput->setScale(0.8f);
 
-    auto nextSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
-    auto prevSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
-    nextSpr->setScale(0.5f);
-    prevSpr->setScale(0.5f);
+    auto nextSpr = SpriteBuilder::createArrow(ArrowSprite::Green, true, 0.5f);
+    auto prevSpr = SpriteBuilder::createArrow(ArrowSprite::Green, false, 0.5f);
 
     m_prev = CCMenuItemSpriteExtra::create(prevSpr, this, menu_selector(SavedPopup::onPrev));
     m_next = CCMenuItemSpriteExtra::create(nextSpr, this, menu_selector(SavedPopup::onNext));
-    m_next->setRotation(180.f);
     m_prev->m_scaleMultiplier = 1.05f;
     m_next->m_scaleMultiplier = 1.05f;
     m_prev->setVisible(false);
@@ -75,7 +73,7 @@ protected:
 
     auto searchSpr = CCSprite::createWithSpriteFrameName("GJ_longBtn06_001.png");
     auto clearSpr = CCSprite::createWithSpriteFrameName("GJ_longBtn07_001.png");
-    auto favSpr = CCSprite::createWithSpriteFrameName("gj_heartOff_001.png");
+    auto favSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::heartOffSprName);
 
     searchSpr->setScale(0.8f);
     clearSpr->setScale(0.8f);
@@ -243,14 +241,14 @@ protected:
   void updateFavBtnSprite(CCMenuItemSpriteExtra* btn, bool isFav) {
     auto favSpr = static_cast<CCSprite *>(btn->getNormalImage());
     favSpr->setDisplayFrame(
-      CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(isFav ? "gj_heartOn_001.png" : "gj_heartOff_001.png")
+      CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(isFav ? SpriteBuilder::heartOnSprName : SpriteBuilder::heartOffSprName)
     );
   }
 
   void updateUseBtn(CCMenuItemSpriteExtra* btn, bool isLoaded) {
     auto useSpr = static_cast<CCSprite *>(btn->getNormalImage());
     useSpr->setDisplayFrame(
-      CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(isLoaded ? "GJ_selectSongOnBtn_001.png" : "GJ_selectSongBtn_001.png")
+      CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(isLoaded ? SpriteBuilder::inUseBtnSprName : SpriteBuilder::useBtnSprName)
     );
   }
 
@@ -274,12 +272,12 @@ protected:
   }
 
   NineSlice *colorPalette(SavedPalette palette) {
-    auto bg = NineSlice::create("square02b_001.png", {0.0f, 0.0f, 80.0f, 80.0f});
+    auto bg = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
     bg->setContentSize({170.f, 70.f});
     bg->setColor({130, 64, 33});
     bg->setScale(0.9f);
 
-    auto label = CCLabelBMFont::create(palette.name.c_str(), "goldFont.fnt");
+    auto label = CCLabelBMFont::create(palette.name.c_str(), SpriteBuilder::goldFontName);
     label->setScale(0.35f);
     label->setAnchorPoint({0.f, 0.5f});
     bg->addChildAtPosition(label, Anchor::TopLeft, ccp(10.f, -10.f));
@@ -297,9 +295,9 @@ protected:
       ->setAutoScale(false));
 
     bool isLoaded = SettingsManager::get().isLoaded(palette.id);
-    auto useSpr = CCSprite::createWithSpriteFrameName(isLoaded ? "GJ_selectSongOnBtn_001.png" : "GJ_selectSongBtn_001.png");
-    auto favBtnSpr = CCSprite::createWithSpriteFrameName(palette.isFavorite ? "gj_heartOn_001.png" : "gj_heartOff_001.png");
-    auto removeBtnSpr = CCSprite::createWithSpriteFrameName("GJ_resetBtn_001.png");
+    auto useSpr = CCSprite::createWithSpriteFrameName(isLoaded ? SpriteBuilder::inUseBtnSprName : SpriteBuilder::useBtnSprName);
+    auto favBtnSpr = CCSprite::createWithSpriteFrameName(palette.isFavorite ? SpriteBuilder::heartOnSprName : SpriteBuilder::heartOffSprName);
+    auto removeBtnSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::resetBtnSprName);
     useSpr->setScale(0.5f);
     favBtnSpr->setScale(0.6f);
     removeBtnSpr->setScale(0.7f);

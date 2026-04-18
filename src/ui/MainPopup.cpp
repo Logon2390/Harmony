@@ -3,16 +3,19 @@
 #include "../managers/SimulationManager.hpp"
 #include "../network/HueMintService.hpp"
 #include "../utils/ColorUtils.hpp"
+#include "../builders/SpriteBuilder.hpp"
 #include "SettingsPopup.cpp"
 #include "HarmonyPopup.cpp"
 #include "SavedPopup.cpp"
+#include "SimulationPopup.cpp"
 
 using namespace geode::prelude;
 
 class MainPopup : public Popup {
 public:
+  std::function<void()> onPalettePoolChanged = []() {};
   static MainPopup *create() {
-    auto popup = new MainPopup;
+    auto popup = new MainPopup();
     if (popup->init()) {
       popup->autorelease();
       return popup;
@@ -31,6 +34,8 @@ protected:
   TextInput* m_nameInput;
   LoadingSpinner* m_spinner = nullptr;
   CCLabelBMFont* m_infoLabel;
+  CCLabelBMFont* m_simulationColorsLabel;
+  CCLabelBMFont* m_simulationSavedLabel;
   CircleButtonSprite* m_generateSpr;
   CCMenuItemSpriteExtra* m_generate;
   CCMenuItemSpriteExtra* m_save;
@@ -49,12 +54,6 @@ protected:
   bool init() {
     if (!Popup::init(width, height)) return false;
 
-    const char *infoIconName = "GJ_infoIcon_001.png";
-    const char *backgroundSpriteName = "square02b_001.png";
-    const char *bigFontName = "bigFont.fnt";
-    const char *goldFontName = "goldFont.fnt";
-
-    m_spinner = LoadingSpinner::create(30.f);
     m_isLoaded = service.getPalettePool().palettes.size() != 0;
 
     auto resetSpr = CircleButtonSprite::create(
@@ -63,17 +62,17 @@ protected:
       CircleBaseColor::Green, CircleBaseSize::Tiny);
 
     auto folderSpr = CircleButtonSprite::create(
-      CCSprite::createWithSpriteFrameName("gj_folderBtn_001.png"),
+      CCSprite::createWithSpriteFrameName(SpriteBuilder::folderBtnSprName),
       CircleBaseColor::Green, CircleBaseSize::Tiny);
 
     auto hideSpr = CircleButtonSprite::create(
-        CCSprite::createWithSpriteFrameName("hideBtn_001.png"),
+        CCSprite::createWithSpriteFrameName(SpriteBuilder::hideSprName),
         CircleBaseColor::Green, CircleBaseSize::Tiny);
 
-    auto infoSpr = CCSprite::createWithSpriteFrameName("GJ_infoBtn_001.png");
+    auto infoSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::helpBtnSprName);
     infoSpr->setScale(0.55f);
 
-    auto settingsSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
+    auto settingsSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::optionsBtnSprName);
     settingsSpr->setScale(0.55f);
 
     CCMenu *optionsMenu = CCMenu::create(
@@ -110,13 +109,13 @@ protected:
             ->setCrossAxisOverflow(false)
             ->setAutoScale(false));
 
-    NineSlice* optsBG = NineSlice::create(backgroundSpriteName, {0.0f, 0.0f, 80.0f, 80.0f});
+    NineSlice* optsBG = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
     m_mainLayer->addChildAtPosition(optsBG, Anchor::Center, ccp(0.f, -10.f));
     optsBG->setContentSize({420.f, 50.f});
     optsBG->setColor({130, 64, 33});
     optsBG->setZOrder(1);
 
-    NineSlice* testModeBG = NineSlice::create(backgroundSpriteName, {0.0f, 0.0f, 80.0f, 80.0f});
+    NineSlice* testModeBG = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
     m_mainLayer->addChildAtPosition(testModeBG, Anchor::Bottom, ccp(0.f, 40.f));
     testModeBG->setContentSize({cropWidth, 50.f});
     testModeBG->setColor({130, 64, 33});
@@ -130,22 +129,21 @@ protected:
     m_colorsMenu->setLayout(mainLayout);
 
     for (size_t i = 0; i < SettingsManager::MAX_COLORS; i++) {
-
-      CCLabelBMFont* label = CCLabelBMFont::create((std::to_string(i + 1)).c_str(), bigFontName);
+      CCLabelBMFont* label = CCLabelBMFont::create((std::to_string(i + 1)).c_str(), SpriteBuilder::bigFontName);
       label->setZOrder(3);
       label->setScale(0.3f);
 
-      CCSprite* lockSpr = CCSprite::createWithSpriteFrameName("GJ_lock_open_001.png");
+      CCSprite* lockSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::lockOpenSprName);
       CCMenuItemSpriteExtra* lockBtn = CCMenuItemSpriteExtra::create(lockSpr, this, menu_selector(MainPopup::onLockColorChannel));
       lockBtn->setID("lock");
       lockBtn->m_scaleMultiplier = 1.1f;
 
-      CCSprite* infoSpr = CCSprite::createWithSpriteFrameName(infoIconName);
+      CCSprite* infoSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::infoIconName);
       CCMenuItemSpriteExtra* infoBtn = CCMenuItemSpriteExtra::create(infoSpr, this, menu_selector(MainPopup::onColorChannelHarmonies));
       infoBtn->setID("info");
       infoBtn->m_scaleMultiplier = 1.1f;
 
-      CCSprite* swapSpr = CCSprite::createWithSpriteFrameName("GJ_resetBtn_001.png");
+      CCSprite* swapSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::resetBtnSprName);
       CCMenuItemSpriteExtra* swapBtn = CCMenuItemSpriteExtra::create(swapSpr, this, menu_selector(MainPopup::onSwapColorChannel));
       swapBtn->setID("swap");
       swapBtn->m_scaleMultiplier = 1.1f;
@@ -174,7 +172,7 @@ protected:
       m_colorsMenu->addChild(item);
     }
 
-    m_nameInput = TextInput::create(150.f, "Palette name", goldFontName);
+    m_nameInput = TextInput::create(150.f, "Palette name", SpriteBuilder::goldFontName);
     m_nameInput->setString("Palette name");
     m_nameInput->setCommonFilter(CommonFilter::Name);
     m_nameInput->setMaxCharCount(25);
@@ -205,32 +203,38 @@ protected:
     m_save->m_baseScale = 0.6f;
     m_save->m_scaleMultiplier = 1.1f;
 
-    CCSprite* prevSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
-    CCSprite* nextSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
+    CCSprite* prevSprite = SpriteBuilder::createArrow(ArrowSprite::Cyan);
+    CCSprite* nextSprite = SpriteBuilder::createArrow(ArrowSprite::Cyan, true);
     m_prev = CCMenuItemSpriteExtra::create(prevSprite, this, menu_selector(MainPopup::onPrevPalette));
     m_next = CCMenuItemSpriteExtra::create(nextSprite, this, menu_selector(MainPopup::onNextPalette));
 
     m_navMenu->setEnabled(false);
     m_navMenu->setVisible(false);
 
-    prevSprite->setScale(0.6f);
-    nextSprite->setScale(0.6f);
-    nextSprite->setFlipX(true);
-
     m_navMenu->addChildAtPosition(m_prev, Anchor::Center, ccp(70.f, 0.f));
     m_navMenu->addChildAtPosition(m_next, Anchor::Center, ccp(100.f, 0.f));
     m_navMenu->addChildAtPosition(m_save, Anchor::Center, ccp(-225.f, 0.f));
     mainMenu->addChildAtPosition(m_generate, Anchor::Center, ccp(197.5f, 0.f));
 
-    m_infoLabel = CCLabelBMFont::create("",bigFontName);
+    m_infoLabel = CCLabelBMFont::create("",SpriteBuilder::bigFontName);
     m_infoLabel->setScale(0.35f);
     m_infoLabel->setAnchorPoint(ccp(0.f, 0.5f));
     optsBG->addChildAtPosition(m_infoLabel, Anchor::Left,ccp(10.f, -10.5f));
 
-    CCLabelBMFont* harmonyInfo = CCLabelBMFont::create("Simulation Mode", goldFontName);
-    harmonyInfo->setScale(0.4f);
-    harmonyInfo->setAnchorPoint(ccp(0.f, 0.5f));
-    testModeBG->addChildAtPosition(harmonyInfo, Anchor::TopLeft, ccp(10.f, -10.f));
+    CCLabelBMFont* simulationLabel = CCLabelBMFont::create("Palette Simulation Mode", SpriteBuilder::goldFontName);
+    simulationLabel->setScale(0.4f);
+    simulationLabel->setAnchorPoint(ccp(0.f, 0.5f));
+    testModeBG->addChildAtPosition(simulationLabel, Anchor::TopLeft, ccp(10.f, -10.f));
+
+    m_simulationColorsLabel = CCLabelBMFont::create("Modified Colors: 0", SpriteBuilder::bigFontName);
+    m_simulationColorsLabel->setScale(0.3f);
+    m_simulationColorsLabel->setAnchorPoint(ccp(0.f, 0.5f));
+    testModeBG->addChildAtPosition(m_simulationColorsLabel, Anchor::TopLeft, ccp(10.f, -25.f));
+
+    m_simulationSavedLabel = CCLabelBMFont::create("Saved Colors: 0", SpriteBuilder::bigFontName);
+    m_simulationSavedLabel->setScale(0.3f);
+    m_simulationSavedLabel->setAnchorPoint(ccp(0.f, 0.5f));
+    testModeBG->addChildAtPosition(m_simulationSavedLabel, Anchor::TopLeft, ccp(10.f, -35.f));
 
     m_testMenu = CCMenu::create();
     m_testMenu->setZOrder(2);
@@ -244,10 +248,10 @@ protected:
       ->setAutoScale(false));
     testModeBG->addChildAtPosition(m_testMenu, Anchor::Right, ccp(-10.f, 0.f));
 
-    const char *frame = simulation.isActive() ? "GJ_stopEditorBtn_001.png" : "GJ_playEditorBtn_001.png";
+    const char *frame = simulation.isActive() ? SpriteBuilder::stopEditorBtnSprName : SpriteBuilder::playEditorBtnSprName;
     CCSprite* testSpr = CCSprite::createWithSpriteFrameName(frame);
-    CCSprite* setupSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
-    CCSprite* helpSpr = CCSprite::createWithSpriteFrameName("GJ_helpBtn_001.png");
+    CCSprite* setupSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::optionsBtnSprName);
+    CCSprite* helpSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::helpBtnSprName);
 
     testSpr->setScale(0.8f);
     setupSpr->setScale(0.6f);
@@ -268,7 +272,6 @@ protected:
       updateColorSprites(manager.getCurrentPalette().colors);
     } 
     
-
     optionsMenu->updateLayout();
     mainMenu->updateLayout();
     m_colorsMenu->updateLayout();
@@ -279,16 +282,13 @@ protected:
 
   void loadLastState() {
     updateColorSprites(manager.getCurrentPalette().colors);
-    updateInfoLabel();
-    updateNavigationButtons();
-    updateSaveButton();
-    updateNameInput();
+    updateUI();
   }
 
   void onReset(CCObject *) {
     geode::createQuickPopup(
       "Reset all colors",
-      "Are you sure you want to reset all colors? This action will also release all locked colors.",
+      "Are you sure you want to reset all colors? This action will also <cg>release all locked colors </c> and <cy>stop palette simulation if active.</c>",
       "Cancel", "Reset", [this](auto, bool btn2) {
         if (btn2) {
           handleReset();
@@ -302,7 +302,7 @@ protected:
     popup->onLoadPalette = [this]() {
       this->m_isLoaded = true;
       this->updateUI();
-
+      if (simulation.isActive()) this->onPalettePoolChanged();
       if (this-> service.getPalettePool().palettes.size() <= 1) {
         updateColorSprites(manager.getCurrentPalette().colors);
       } 
@@ -334,7 +334,7 @@ protected:
     auto colorSpr = static_cast<ColorChannelSprite *>(item->getNormalImage());
 
     if (manager.isColorLocked(utils.colorToHex(colorSpr->getColor()))) {
-      FLAlertLayer::create("This color is locked", "Unlock this color to edit it.", "OK")->show();
+      FLAlertLayer::create("This color is <cb>locked</c>", "Unlock this color to edit it.", "OK")->show();
       return;
     }
 
@@ -428,7 +428,7 @@ protected:
     int index = static_cast<CCInteger *>(menu->getUserObject())->getValue();
 
     if (manager.isColorLocked(index)) {
-      FLAlertLayer::create("This color is locked", "Unlock this color to swap it.", "OK")->show();
+      FLAlertLayer::create("This color is <cb>locked</c>", "Unlock this color to swap it.", "OK")->show();
       return;
     }
 
@@ -441,6 +441,7 @@ protected:
 
     manager.swapColors(m_swapIndex, index);
     updateColorSprites(manager.getCurrentPalette().colors);
+    if (simulation.isActive()) simulation.replace();
     m_swapIndex = -1;
   }
 
@@ -454,18 +455,16 @@ protected:
   }
 
   void onSimulationToggle(CCObject *) {
-    //simulation.isActive() = !simulation.isActive();
+    bool isActive = simulation.toggleSimulation();
+    
+    std::string message = isActive ? "Simulation mode activated" : "Simulation mode stopped, original colors restored";
+    Notification::create(message.c_str(), NotificationIcon::Info)->show();
     updateTestButton();
+    updateSimulationLabels();
   }
 
   void onSimulationSettings(CCObject *) {
-    FLAlertLayer::create(
-        "Simulation Settings",
-        "Here you can adjust the settings for the color harmony simulation mode.",
-        "OK")
-        ->show();
-
-      simulation.m_isSetupStage = true;
+    SimulationPopup::create()->show();
   }
 
   void onSimulationInfo(CCObject *) {
@@ -500,6 +499,13 @@ protected:
                     service.getPalettePool().currentItem + 1,
                     service.getPalettePool().palettes.size())
             .c_str());
+  }
+
+  void updateSimulationLabels() {
+    m_simulationColorsLabel->setString(
+        fmt::format("Modified Colors: {}", simulation.getAffectedColors()).c_str());
+    m_simulationSavedLabel->setString(
+        fmt::format("Saved Colors: {}", simulation.getSavedColors()).c_str());
   }
 
   void updateColorButton(int index, int limit) {
@@ -542,7 +548,7 @@ protected:
     CCMenuItemSpriteExtra * color = m_colorButtons[index];
     CCMenuItemSpriteExtra * lockBtn = static_cast<CCMenuItemSpriteExtra *>(color->getChildByIDRecursive("lock"));
 
-    const char *frame = locked ? "GJ_lock_001.png" : "GJ_lock_open_001.png";
+    const char *frame = locked ? SpriteBuilder::lockClosedSprName : SpriteBuilder::lockOpenSprName;
     static_cast<CCSprite *>(lockBtn->getNormalImage())->setDisplayFrame(
         CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frame));
   }
@@ -570,7 +576,7 @@ protected:
   void updateTestButton() {
     CCSprite* testSpr = static_cast<CCSprite*>(m_test->getNormalImage());
 
-    const char *frame = simulation.isActive() ? "GJ_stopEditorBtn_001.png" : "GJ_playEditorBtn_001.png";
+    const char *frame = simulation.isActive() ? SpriteBuilder::stopEditorBtnSprName : SpriteBuilder::playEditorBtnSprName;
     testSpr->setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frame));
   }
 
@@ -579,6 +585,8 @@ protected:
     updateSaveButton();
     updateNameInput();
     updateNavigationButtons();
+    updateTestButton();
+    updateSimulationLabels();
   }
 
   void handleReset() {
@@ -588,6 +596,12 @@ protected:
     manager.resetLocks();
     data.clearSaved();
 
+    // stop simulation if active, this will also restore original colors
+    if (simulation.isActive()) {
+      simulation.toggleSimulation();
+      simulation.reset();
+      Notification::create("Simulation mode stopped, original colors restored", NotificationIcon::Info)->show();
+    } 
     updateColorSprites(manager.getCurrentPalette().colors);
     updateUI();
   }
@@ -626,7 +640,7 @@ protected:
 
     if (create) {
       bool isCorner = index == 0 || index == limit - 1;
-      const char *spriteName = isCorner ? "square02b_001.png" : "square.png";
+      const char *spriteName = isCorner ? SpriteBuilder::backgroundSprName : SpriteBuilder::squareSprName;
       CCRect rect = isCorner ? CCRect{0, 0, 50, 80} : CCRect{0, 0, 80, 80};
 
       colorSpr = NineSlice::create(spriteName, rect);

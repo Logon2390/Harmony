@@ -1,6 +1,7 @@
 #include <Geode/ui/ColorPickPopup.hpp>
 #include "../managers/HarmonyManager.hpp"
 #include "../utils/ColorUtils.hpp"
+#include "../builders/SpriteBuilder.hpp"
 
 using namespace geode::prelude;
 
@@ -54,11 +55,11 @@ protected:
     }
 
     CCNode* createHarmonyRow(const char* title, Palette colors, float width, float height = 40.f) {
-        auto bg = NineSlice::create("square02b_001.png", {0.0f, 0.0f, 80.0f, 80.0f});
+        auto bg = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
         bg->setContentSize({width, height});
         bg->setColor({130, 64, 33});
 
-        auto label = CCLabelBMFont::create(title, "goldFont.fnt");
+        auto label = CCLabelBMFont::create(title, SpriteBuilder::goldFontName);
         label->setScale(0.3f);
         label->setAnchorPoint({0.f, 0.5f});
         bg->addChildAtPosition(label, Anchor::Left, ccp(5.f, 10.f));

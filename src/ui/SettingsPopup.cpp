@@ -2,6 +2,7 @@
 #include <Geode/ui/TextInput.hpp>
 #include "../managers/SettingsManager.hpp"
 #include "../network/HueMintService.hpp"
+#include "../builders/SpriteBuilder.hpp"
 
 using namespace geode::prelude;
 
@@ -9,7 +10,7 @@ class SettingsPopup : public Popup {
 public:
   std::function<void()> onColorsChanged = []() {};
   static SettingsPopup *create() {
-    auto popup = new SettingsPopup;
+    auto popup = new SettingsPopup();
     if (popup->init()) {
       popup->autorelease();
       return popup;
@@ -30,12 +31,6 @@ protected:
 
   const float width = 300.f;
   const float height = 260.f;
-
-  const char *infoIconName = "GJ_infoIcon_001.png";
-  const char *backgroundSpriteName = "square02b_001.png";
-  const char *bigFontName = "bigFont.fnt";
-  const char *goldFontName = "goldFont.fnt";
-  const char *arrowSprName = "GJ_arrow_01_001.png";
 
   bool init() {
     if (!Popup::init(width, height)) return false;
@@ -61,29 +56,29 @@ protected:
     m_infoMenu->setContentSize({width, height});
     m_mainLayer->addChildAtPosition(m_infoMenu, Anchor::BottomLeft);
 
-    m_mode = CCLabelBMFont::create(manager.getRequest().mode.c_str(), bigFontName);
+    m_mode = CCLabelBMFont::create(manager.getRequest().mode.c_str(), SpriteBuilder::bigFontName);
     m_mode->setScale(0.5f);
 
     CCMenu* modeMenu = createMenu(layout);
-    modeMenu->addChild(CCMenuItemSpriteExtra::create(createArrow(), this, menu_selector(SettingsPopup::onprevMode)));
+    modeMenu->addChild(CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Green), this, menu_selector(SettingsPopup::onprevMode)));
     modeMenu->addChild(m_mode);
-    modeMenu->addChild(CCMenuItemSpriteExtra::create(createArrow(true), this, menu_selector(SettingsPopup::onNextMode)));
+    modeMenu->addChild(CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Green, true), this, menu_selector(SettingsPopup::onNextMode)));
 
     CCMenuItemSpriteExtra* modeInfoBtn = CCMenuItemSpriteExtra::create(
-        CCSprite::createWithSpriteFrameName(infoIconName), this, menu_selector(SettingsPopup::onModeInfo));
-    createSelectorRow("Mode", modeMenu, modeInfoBtn, {0.f, 80.f});
+        CCSprite::createWithSpriteFrameName(SpriteBuilder::infoIconName), this, menu_selector(SettingsPopup::onModeInfo));
+    createSelectorRow("Mode", modeMenu, modeInfoBtn, 80.f);
 
-    m_preset = CCLabelBMFont::create(manager.getRequest().preset.c_str(), bigFontName);
+    m_preset = CCLabelBMFont::create(manager.getRequest().preset.c_str(), SpriteBuilder::bigFontName);
     m_preset->setScale(0.5f);
 
     CCMenu* presetMenu = createMenu(layout);
-    presetMenu->addChild(CCMenuItemSpriteExtra::create(createArrow(), this, menu_selector(SettingsPopup::onprevPreset)));
+    presetMenu->addChild(CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Green), this, menu_selector(SettingsPopup::onprevPreset)));
     presetMenu->addChild(m_preset);
-    presetMenu->addChild(CCMenuItemSpriteExtra::create(createArrow(true), this, menu_selector(SettingsPopup::onNextPreset)));
+    presetMenu->addChild(CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Green, true), this, menu_selector(SettingsPopup::onNextPreset)));
     CCMenuItemSpriteExtra* presetInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(),this, menu_selector(SettingsPopup::onPresetInfo));
-    createSelectorRow("Presets", presetMenu, presetInfoBtn, {0.f, 50.f});
+    createSelectorRow("Presets", presetMenu, presetInfoBtn, 50.f);
 
-    m_colors = TextInput::create(100.f, "6", bigFontName);
+    m_colors = TextInput::create(100.f, "6");
     m_colors->setString(std::to_string(manager.getRequest().num_colors).c_str());
     m_colors->setCommonFilter(CommonFilter::Int);
     m_colors->setMaxCharCount(2);
@@ -92,13 +87,13 @@ protected:
         [this](gd::string input) { this->onColorsInput(input); });
 
     CCMenu *colorsMenu = createMenu(layout);
-    colorsMenu->addChild(CCMenuItemSpriteExtra::create(createArrow(), this, menu_selector(SettingsPopup::onDecreaseColors)));
+    colorsMenu->addChild(CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Green), this, menu_selector(SettingsPopup::onDecreaseColors)));
     colorsMenu->addChild(m_colors);
-    colorsMenu->addChild(CCMenuItemSpriteExtra::create(createArrow(true), this, menu_selector(SettingsPopup::onIncreaseColors)));
+    colorsMenu->addChild(CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Green, true), this, menu_selector(SettingsPopup::onIncreaseColors)));
     CCMenuItemSpriteExtra* colorsInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(),this, menu_selector(SettingsPopup::onColorsInfo));
-    createSelectorRow("Colors", colorsMenu, colorsInfoBtn, {0.f, 20.f});
+    createSelectorRow("Colors", colorsMenu, colorsInfoBtn, 20.f);
 
-    m_temperature = TextInput::create(100.f, "1.3", bigFontName);
+    m_temperature = TextInput::create(100.f, "1.3");
     m_temperature->setString(std::to_string(manager.getRequest().temperature).erase(3).c_str());
     m_temperature->setCommonFilter(CommonFilter::Float);
     m_temperature->setMaxCharCount(3);
@@ -108,13 +103,13 @@ protected:
     });
 
     CCMenu *tempMenu = createMenu(layout);
-    tempMenu->addChild(CCMenuItemSpriteExtra::create(createArrow(), this, menu_selector(SettingsPopup::onDecreaseTemp)));
+    tempMenu->addChild(CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Green), this, menu_selector(SettingsPopup::onDecreaseTemp)));
     tempMenu->addChild(m_temperature);
-    tempMenu->addChild(CCMenuItemSpriteExtra::create(createArrow(true), this, menu_selector(SettingsPopup::onIncreaseTemp)));
+    tempMenu->addChild(CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Green, true), this, menu_selector(SettingsPopup::onIncreaseTemp)));
     CCMenuItemSpriteExtra* tempInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(),this, menu_selector(SettingsPopup::onTemperatureInfo));
-    createSelectorRow("Temperature", tempMenu, tempInfoBtn, {0.f, -10.f});
+    createSelectorRow("Temperature", tempMenu, tempInfoBtn, -10.f);
 
-    m_results = TextInput::create(100.f, "10", bigFontName);
+    m_results = TextInput::create(100.f, "10");
     m_results->setString(std::to_string(manager.getRequest().num_results).c_str());
     m_results->setCommonFilter(CommonFilter::Int);
     m_results->setMaxCharCount(2);
@@ -124,11 +119,11 @@ protected:
     });
 
     CCMenu *resultsMenu = createMenu(layout);
-    resultsMenu->addChild(CCMenuItemSpriteExtra::create(createArrow(), this, menu_selector(SettingsPopup::onDecreaseResults)));
+    resultsMenu->addChild(CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Green), this, menu_selector(SettingsPopup::onDecreaseResults)));
     resultsMenu->addChild(m_results);
-    resultsMenu->addChild(CCMenuItemSpriteExtra::create(createArrow(true), this, menu_selector(SettingsPopup::onIncreaseResults)));
+    resultsMenu->addChild(CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Green, true), this, menu_selector(SettingsPopup::onIncreaseResults)));
     CCMenuItemSpriteExtra* resultsInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(),this, menu_selector(SettingsPopup::onResultsInfo));
-    createSelectorRow("Results", resultsMenu, resultsInfoBtn, {0.f, -40.f});
+    createSelectorRow("Results", resultsMenu, resultsInfoBtn, -40.f);
 
     ButtonSprite *adjacencyBtn = ButtonSprite::create("Modify");
     adjacencyBtn->setScale(0.7f);
@@ -136,7 +131,7 @@ protected:
     CCMenu *adjacencyMenu = createMenu(buttonLayout);
     adjacencyMenu->addChild(CCMenuItemSpriteExtra::create(adjacencyBtn, this, menu_selector(SettingsPopup::onAdjacency)));
     CCMenuItemSpriteExtra* adjacencyInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(),this, menu_selector(SettingsPopup::onAdjacencyInfo));
-    createSelectorRow("Adjacency", adjacencyMenu, adjacencyInfoBtn, {0.f, -70.f});
+    createSelectorRow("Adjacency", adjacencyMenu, adjacencyInfoBtn, -70.f);
 
     ButtonSprite *resetBtn = ButtonSprite::create("Reset");
     resetBtn->setScale(0.7f);
@@ -144,7 +139,7 @@ protected:
     CCMenu *resetMenu = createMenu(buttonLayout);
     resetMenu->addChild(CCMenuItemSpriteExtra::create(resetBtn, this, menu_selector(SettingsPopup::onResetSettings)));
     CCMenuItemSpriteExtra* resetInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(),this, menu_selector(SettingsPopup::onResetInfo));
-    createSelectorRow("Default values", resetMenu, resetInfoBtn, {0.f, -100.f});
+    createSelectorRow("Default values", resetMenu, resetInfoBtn, -100.f);
 
     m_infoMenu->updateLayout();
     return true;
@@ -320,20 +315,20 @@ protected:
     FLAlertLayer::create("Reset info", "text", "OK")->show();
   }
 
-  CCNode *createSelectorRow(const char *title, CCNode *node, CCMenuItemSpriteExtra* infoBtn, CCPoint position) {
-    auto bg = geode::NineSlice::create(backgroundSpriteName, {0, 0, 80, 80});
+  CCNode *createSelectorRow(const char *title, CCNode *node, CCMenuItemSpriteExtra* infoBtn, float height) {
+    auto bg = geode::NineSlice::create(SpriteBuilder::backgroundSprName, {0, 0, 80, 80});
     bg->setContentSize({(width - 20.f), 25.f});
     bg->setColor({130, 64, 33});
 
-    auto label = CCLabelBMFont::create(title, goldFontName);
+    auto label = CCLabelBMFont::create(title, SpriteBuilder::goldFontName);
     label->setScale(0.5f);
     label->setAnchorPoint({0.f, 0.5f});
     bg->addChildAtPosition(label, Anchor::Left, ccp(10.f, 0.f));
 
     bg->addChildAtPosition(node, Anchor::Right, ccp(-10.f, 0.f));
-    m_mainLayer->addChildAtPosition(bg, Anchor::Center, position);
+    m_mainLayer->addChildAtPosition(bg, Anchor::Center, ccp(0.f, height));
 
-    auto infoSpr = CCSprite::createWithSpriteFrameName(infoIconName);
+    auto infoSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::infoIconName);
     infoSpr->setScale(0.5f);
 
     infoBtn->setSprite(infoSpr);
@@ -343,13 +338,6 @@ protected:
 
     node->updateLayout();
     return bg;
-  }
-
-  CCSprite *createArrow(bool flipped = false) {
-    auto spr = CCSprite::createWithSpriteFrameName(arrowSprName);
-    spr->setScale(0.6f);
-    spr->setFlipX(flipped);
-    return spr;
   }
 
   CCMenu *createMenu(RowLayout *layout) {
