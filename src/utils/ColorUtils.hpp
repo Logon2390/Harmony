@@ -14,7 +14,9 @@ class ColorUtils {
     std::string hsvToHex(HSV hsv);
     RGBA toRGBA(ccColor3B color);
     void copyColor(ccColor3B color, CCObject* sender);
-    
+    void applyColorToSprite(NineSlice* sprite, std::string hex = "#FFFFFF");
+    void applyColorToSprite(CCSprite* sprite, std::string hex = "#FFFFFF");
+
     private:
     ColorUtils() {
         m_colorSelectPopup = ColorSelectPopup::create({255, 255, 255});
