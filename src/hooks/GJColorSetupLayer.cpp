@@ -1,0 +1,38 @@
+#include <Geode/modify/GJColorSetupLayer.hpp>
+#include "../managers/SimulationManager.hpp"
+#include "../ui/SimulationSetupPopup.cpp"
+
+using namespace geode::prelude;
+
+class $modify(MyGJColorSetupLayer, GJColorSetupLayer) {
+
+    struct Fields {
+        SimulationManager& manager = SimulationManager::get();
+    };
+
+    void onColor(CCObject* sender) {
+        if (!m_fields->manager.m_isSetupStage) return GJColorSetupLayer::onColor(sender);
+
+        CCMenuItemSpriteExtra* btn = static_cast<CCMenuItemSpriteExtra*>(sender);
+        int colorID = btn->getTag() + (m_colorsPerPage * m_page);
+
+        SimulationSetupPopup* popup = SimulationSetupPopup::create(colorID);
+        popup->onColorSelect = [this, btn, colorID]() {
+            GJColorSetupLayer::showPage(m_page);
+        };
+        popup->show();
+    }
+
+    void onClose(CCObject* sender) {
+        m_fields->manager.m_isSetupStage = false;
+        GJColorSetupLayer::onClose(sender);
+    }
+
+    void updateSpriteColor(ColorChannelSprite* sprite, CCLabelBMFont* label, int id) {
+        if (!m_fields->manager.m_isSetupStage) return GJColorSetupLayer::updateSpriteColor(sprite, label, id);
+
+        ccColor3B color = m_fields->manager.isColorSetup(id) ? ccColor3B{0, 255, 0} : ccColor3B{255, 255, 255};
+        label->setColor(color);
+        GJColorSetupLayer::updateSpriteColor(sprite, label, id);
+    }
+};
