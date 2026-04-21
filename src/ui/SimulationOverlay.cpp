@@ -2,6 +2,8 @@
 #include "../managers/SettingsManager.hpp"
 #include "../network/HueMintService.hpp"
 #include "../builders/SpriteBuilder.hpp"
+#include "../utils/ColorUtils.hpp"
+#include <Geode/utils/cocos.hpp>
 
 using namespace geode::prelude;
 
@@ -17,91 +19,117 @@ public:
     return nullptr;
   }
   void onToggleVisibility() {
-    m_isVisible = !m_isVisible;
-
-    m_menu->setEnabled(m_isVisible);
-    this->setVisible(m_isVisible);
-    updateNavigationButtons();
-    updateInfoLabel();
+    m_menu->setEnabled(simulation.shouldDisplayOverlay());
+    this->setVisible(simulation.shouldDisplayOverlay());
+    refresh();
   }
   void refresh() {
-    updateNavigationButtons();
-    updateInfoLabel();
+    updateUI();
   }
 
 protected:
   SimulationManager &simulation = SimulationManager::get();
   SettingsManager &settings = SettingsManager::get();
   HueMintService &service = HueMintService::get();
-  CCLabelBMFont *m_label;
-  CCMenu *m_menu;
+  ColorUtils &utils = ColorUtils::get();
+  CCLabelBMFont* m_label;
+  CCMenu* m_menu;
+  CCNode* m_colors;
+  Ref<CCArray> m_colorSprites;
   CCMenuItemSpriteExtra* m_prev;
   CCMenuItemSpriteExtra* m_next;
   CCMenuItemSpriteExtra* m_visibilityBtn;
   CCMenuItemSpriteExtra* m_shuffleBtn;
-  const float width = 300.f;
-  const float height = 20.f;
-  bool m_isVisible = false;
+  const float width = 250.f;
+  const float height = 15.f;
   bool m_isHidden = false;
 
   bool init() {
-    if (!this->initWithFile(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f}, {})) return false;
+    if (!this->initWithFile("square02b_small.png", {0.0f, 0.0f, 40.0f, 40.0f}, {})) return false;
 
     this->setContentSize({width, height});
     this->setColor({ 0, 0, 0 });
     this->setOpacity(150);
-    this->setVisible(m_isVisible);
+    this->setVisible(false);
     this->setID("simulation-overlay"_spr);
 
     m_menu = CCMenu::create();
     m_menu->setContentSize({width, height});
     this->addChildAtPosition(m_menu, Anchor::Center);
 
-    m_next = CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Pink, true, 0.4f), this, menu_selector(SimulationOverlay::onNext));
-    m_menu->addChildAtPosition(m_next, Anchor::Right, ccp(-20.f, 0.f));
+    m_next = CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Pink, true, 0.3f), this, menu_selector(SimulationOverlay::onNext));
+    m_menu->addChildAtPosition(m_next, Anchor::Right, ccp(-10.f, 0.f));
 
-    m_prev = CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Pink, false, 0.4f), this, menu_selector(SimulationOverlay::onPrev));
-    m_menu->addChildAtPosition(m_prev, Anchor::Right, ccp(-50.f, 0.f));
+    m_prev = CCMenuItemSpriteExtra::create(SpriteBuilder::createArrow(ArrowSprite::Pink, false, 0.3f), this, menu_selector(SimulationOverlay::onPrev));
+    m_menu->addChildAtPosition(m_prev, Anchor::Right, ccp(-25.f, 0.f));
 
     m_label = CCLabelBMFont::create("", SpriteBuilder::bigFontName);
-    m_label->setScale(0.35f);
+    m_label->setScale(0.3f);
     m_label->setAnchorPoint({ 0.f, 0.5f });
-    this->addChildAtPosition(m_label, Anchor::Left, ccp(10.f, 0.f));
+    this->addChildAtPosition(m_label, Anchor::Left, ccp(5.f, 0.f));
 
     auto shuffleSpr = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName("icon.png"_spr), EditorBaseColor::LightBlue);
-    shuffleSpr->setScale(0.5f);
+    shuffleSpr->setScale(0.35f);
 
     auto visibilitySpr = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName(SpriteBuilder::hideSprName), EditorBaseColor::DarkGray);
-    visibilitySpr->setScale(0.5f);
+    visibilitySpr->setScale(0.35f);
 
     m_visibilityBtn = CCMenuItemSpriteExtra::create(visibilitySpr, this, menu_selector(SimulationOverlay::onVisibilityToggle));
-    m_menu->addChildAtPosition(m_visibilityBtn, Anchor::Left, ccp(100.f, 0.f));
+    m_menu->addChildAtPosition(m_visibilityBtn, Anchor::Left, ccp(85.f, 0.f));
 
     m_shuffleBtn = CCMenuItemSpriteExtra::create(shuffleSpr, this, menu_selector(SimulationOverlay::onShuffle));
-    m_menu->addChildAtPosition(m_shuffleBtn, Anchor::Left, ccp(80.f, 0.f));
+    m_menu->addChildAtPosition(m_shuffleBtn, Anchor::Left, ccp(65.f, 0.f));
 
+    m_colors = CCNode::create();
+    m_colors->setAnchorPoint(ccp(0.5f, 0.5f));
+    m_colors->setContentSize({80.f, height});
+    m_colors->setLayout(RowLayout::create()
+      ->setGap(1.f)
+      ->setAxisAlignment(AxisAlignment::Start)
+      ->setCrossAxisLineAlignment(AxisAlignment::Center)
+      ->setCrossAxisOverflow(false)
+      ->setAutoScale(false));
+
+    this->addChildAtPosition(m_colors, Anchor::Center, ccp(10.f, 0.f));
+    m_colorSprites = CCArray::createWithCapacity(settings.MAX_COLORS);
+
+    for (int i = 0; i < settings.MAX_COLORS; i++) {
+      CCSprite *colorSpr = CCSprite::create(SpriteBuilder::circleSprName);
+      m_colorSprites->addObject(colorSpr);
+      colorSpr->setScale(1.2f);
+      colorSpr->setVisible(false);
+      m_colors->addChild(colorSpr);
+    }
+
+    updatePalettePreview();
     updateInfoLabel(); 
     m_menu->updateLayout();
+    m_colors->updateLayout();
     return true;
   }
 
   void onNext(CCObject*) {
     settings.getNextPalette();
     simulation.replace();
-    updateInfoLabel();
-    updateNavigationButtons();
+    updateUI();
   }
 
   void onPrev(CCObject*) {
     settings.getPrevPalette();
     simulation.replace();
-    updateInfoLabel();
+    updateUI();
+  }
+
+  void updateUI() {
     updateNavigationButtons();
+    updateInfoLabel();
+    updatePalettePreview();
   }
 
   void onShuffle(CCObject*) {
     settings.shufflePalette();
     simulation.replace();
+    updatePalettePreview();
   }
 
   void onVisibilityToggle(CCObject *) {
@@ -116,7 +144,7 @@ protected:
 
   void updateNavigationButtons() {
     int currentIndex = service.getPalettePool().currentItem;
-    int totalItems = service.getPalettePool().palettes.size();
+    int totalItems = service.getPoolSize();
     int prevOpacity = currentIndex > 0 ? 255 : 200;
     int nextOpacity = currentIndex < totalItems - 1 ? 255 : 200;
 
@@ -124,16 +152,30 @@ protected:
     m_next->setOpacity(nextOpacity);
     m_prev->setEnabled(currentIndex > 0);
     m_next->setEnabled(currentIndex < totalItems - 1);
-    m_prev->setVisible(totalItems > 1);
-    m_next->setVisible(totalItems > 1);
   }
 
   void updateInfoLabel() {
     m_label->setString(
         fmt::format("P: {} - {}",
             service.getPalettePool().currentItem + 1,
-            service.getPalettePool().palettes.size())
+            service.getPoolSize())
         .c_str()
     );
+  }
+
+  void updatePalettePreview() {
+    auto colorsSprites = m_colorSprites->asExt<CCSprite*>();
+    auto colors = settings.getCurrentPalette().colors;
+    int paletteSize = colors.size();
+
+    for (int i = 0; i < settings.MAX_COLORS; i++) {
+      if (i < paletteSize) {
+        utils.applyColorToSprite(colorsSprites[i], colors[i]);
+        colorsSprites[i]->setVisible(true);
+      } else {
+        colorsSprites[i]->setVisible(false);
+      }
+    }
+    m_colors->updateLayout();
   }
 };

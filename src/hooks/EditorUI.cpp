@@ -12,10 +12,17 @@ class $modify(MyEditorUI, EditorUI) {
         CCMenuItemSpriteExtra* mainBtn;
         SimulationOverlay* simulationOverlay;
         SimulationManager& manager = SimulationManager::get();
+        bool isPlayTesting = false;
+        ~Fields() {
+            manager.m_effectManager = nullptr;
+            manager.m_settings = nullptr;
+        }
     };
 
     bool init(LevelEditorLayer* layer) {
         if (!EditorUI::init(layer)) return false;
+
+        m_fields.self();
 
         //pre-load data
         DataManager::get().load();
@@ -37,7 +44,11 @@ class $modify(MyEditorUI, EditorUI) {
         }
 
         m_fields->simulationOverlay = SimulationOverlay::create();
-        m_fields->simulationOverlay->setPosition({ 260.f, 130.f });
+        auto winSize = CCDirector::sharedDirector()->getWinSize();
+        bool isLiveColorsEnabled = (this->getChildByID("alphalaneous.tinker/live-colors-menu") != nullptr);
+        float offsetY = isLiveColorsEnabled ? this->m_toolbarHeight + 45.f : this->m_toolbarHeight + 30.f;
+        
+        m_fields->simulationOverlay->setPosition({ winSize.width / 2.f, offsetY });    
         this->addChild(m_fields->simulationOverlay);
         
         m_fields->manager.onSimulationToggled = [this]() {
@@ -68,8 +79,19 @@ class $modify(MyEditorUI, EditorUI) {
     void showUI(bool show) {
         m_fields->mainBtn->setVisible(show);
         if (m_fields->simulationOverlay) {
-            m_fields->simulationOverlay->setVisible(show && m_fields->manager.isActive());
+            bool isPlayTesting = m_fields->isPlayTesting;
+            m_fields->simulationOverlay->setVisible(show && m_fields->manager.shouldDisplayOverlay() && !isPlayTesting);
         }
 		return EditorUI::showUI(show);
+    }
+
+    void onPlaytest(CCObject* sender) {
+        m_fields->isPlayTesting = true;
+        EditorUI::onPlaytest(sender);
+    }
+
+    void onStopPlaytest(CCObject* sender) {
+        m_fields->isPlayTesting = false;
+        EditorUI::onStopPlaytest(sender);
     }
 };
