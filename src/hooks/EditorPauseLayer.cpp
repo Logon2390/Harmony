@@ -19,6 +19,11 @@ class $modify(MyEditorPauseLayer, EditorPauseLayer) {
     EditorPauseLayer::onSaveAndExit(sender);
   }
 
+  void onSave(CCObject* sender) {
+    onExitRestore();
+    EditorPauseLayer::onSave(sender);
+  }
+
   // restore original colors when exiting editor
   void onExitRestore() {
     if (SimulationManager::get().isActive()) {
