@@ -37,7 +37,7 @@ void DataManager::setSaved(int index)
 
 bool DataManager::isSaved(int index)
 {
-    return m_savedResults.count(index) > 0 && m_savedResults.at(index);
+    return m_savedResults.contains(index) && m_savedResults.at(index);
 }
 
 void DataManager::clearSaved() 

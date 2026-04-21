@@ -1,11 +1,9 @@
 #pragma once
-#include "SettingsManager.hpp"
 
 using namespace geode::prelude;
 
-class SimulationManager : public ConfigureValuePopupDelegate {
+class SimulationManager {
     public:
-        int m_selectedColorID = 0;
         bool m_isSetupStage = false;
         GJEffectManager* m_effectManager;
         LevelSettingsObject* m_settings;
@@ -21,13 +19,15 @@ class SimulationManager : public ConfigureValuePopupDelegate {
         bool replace();
         bool toggleSimulation();
         bool isColorSetup(int colorID);
+        int getColorSetup(int colorID);
+        bool shouldDisplayOverlay();
         void saveOrginalColorActions();
         const bool isActive() const { return m_isActive; }
         const int getColors() const { return m_colors; }
         const int getSavedColors() const { return static_cast<int>(m_colorActions.size()); }
-        const int getAffectedColors() const { return static_cast<int>(m_colorSettings.size()); }
+        const int getModifiedColors() const { return static_cast<int>(m_colorSettings.size()); }
+        const std::unordered_map<int, int>& getColorSettings() const { return m_colorSettings; }
         std::function<void()> onSimulationToggled = []() {};
-        void valuePopupClosed(ConfigureValuePopup* popup, float value) override;
 
     private:
         std::unordered_map<int, ColorAction*> m_colorActions; //store original color actions to restore them later

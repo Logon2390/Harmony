@@ -23,8 +23,10 @@ bool SimulationManager::restore()
 
 void SimulationManager::setup(int colorID, int colorIndex) 
 {
-    m_colorSettings[colorID] = colorIndex;
-    Notification::create(fmt::format("Color channel {} setup with color {}", colorID , colorIndex + 1).c_str(), NotificationIcon::Info)->show();
+    if (colorIndex < 0 || colorIndex >= getMaxColorCount()) return;
+
+    // link color channel ID with color index in the palette
+    m_colorSettings[colorID] = colorIndex;    
 }
 
 bool SimulationManager::replace() 
@@ -59,7 +61,16 @@ bool SimulationManager::toggleSimulation()
 
 bool SimulationManager::isColorSetup(int colorID)
 {
-    return m_colorSettings.count(colorID) > 0 && m_colorSettings.at(colorID) > 0;
+    return m_colorSettings.contains(colorID);
+}
+
+int SimulationManager::getColorSetup(int colorID)
+{
+    if (m_colorSettings.contains(colorID)) {
+        return m_colorSettings[colorID];
+    }
+
+    return -1;
 }
 
 int SimulationManager::getMaxColorCount() 
@@ -102,13 +113,9 @@ void SimulationManager::saveOrginalColorActions()
     }
 }
 
-void SimulationManager::valuePopupClosed(ConfigureValuePopup *popup, float value) {
-  int colorIndex = static_cast<int>(value);
-  colorIndex = colorIndex - 1; // color index is 0-based, but the popup shows 1-based index
-  if (colorIndex < 0 || colorIndex >= getMaxColorCount()) return;
-
-  // link color channel ID with color index in the palette
-  setup(m_selectedColorID, colorIndex);
+bool SimulationManager::shouldDisplayOverlay()
+{
+    return getModifiedColors() > 0 && m_isActive;
 }
 
 bool SimulationManager::toggleSimulationFlag()

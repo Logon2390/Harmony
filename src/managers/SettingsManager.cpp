@@ -5,11 +5,11 @@ HueMintService& service = HueMintService::get();
 
 SavedPalette &SettingsManager::getCurrentPalette() {
 
-  if (service.getPalettePool().palettes.size() == 0) {
+  if (service.getPoolSize() == 0) {
     return defaultPalette;
   }
 
-  int totalItems = service.getPalettePool().palettes.size();
+  int totalItems = service.getPoolSize();
   int currentIndex = service.getPalettePool().currentItem;
   int index = currentIndex >= totalItems ? totalItems - 1 : currentIndex;  
   return service.getPalettePool().palettes.at(currentIndex);
@@ -20,7 +20,7 @@ SavedPalette SettingsManager::getNextPalette()
     int currentIndex = service.getPalettePool().currentItem;
     int nextIndex = currentIndex + 1;
 
-    if (nextIndex >= service.getPalettePool().palettes.size())
+    if (nextIndex >= service.getPoolSize())
         return service.getPalettePool().palettes.at(currentIndex);
 
     service.getPalettePool().currentItem = nextIndex;
@@ -178,7 +178,7 @@ void SettingsManager::setLoaded(const std::string &id)
 
 bool SettingsManager::isLoaded(const std::string &id)
 {
-    return m_loadedPalettes.count(id) > 0 && m_loadedPalettes.at(id);
+    return m_loadedPalettes.contains(id) && m_loadedPalettes.at(id);
 }
 
 void SettingsManager::clearLoaded() 
