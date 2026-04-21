@@ -18,7 +18,8 @@ public:
     static HueMintService instance;
     return instance;
   }
-  PaletteResult &getPalettePool() { return m_currentPaletteResult; } 
+  PaletteResult &getPalettePool() { return m_currentPaletteResult; }
+  int getPoolSize() { return static_cast<int>(m_currentPaletteResult.palettes.size()); } 
   void request(std::function<void(Palette)> onComplete);
 
 private:

@@ -54,7 +54,7 @@ protected:
   bool init() {
     if (!Popup::init(width, height)) return false;
 
-    m_isLoaded = service.getPalettePool().palettes.size() != 0;
+    m_isLoaded = service.getPoolSize() > 0;
 
     auto resetSpr = CircleButtonSprite::create(
       // @geode-ignore(unknown-resource)
@@ -150,7 +150,7 @@ protected:
 
       CCMenu* colorMenu = CCMenu::create();
       colorMenu->setID("menu");
-      colorMenu->setUserObject(CCInteger::create(i));
+      colorMenu->setTag(i);
       colorMenu->setScale(0.6f);
       colorMenu->setZOrder(3);
       colorMenu->setContentSize(ccp(20.f, 60.f));
@@ -165,7 +165,7 @@ protected:
       m_colorButtons[i] = item;
 
       item->m_scaleMultiplier = 1.f;
-      item->setNormalImage(createColorSpr(i, manager.getRequest().num_colors));
+      item->setNormalImage(SpriteBuilder::createColorSpr(item, i, manager.getRequest().num_colors));
       item->setVisible(false);
       item->addChildAtPosition(label, Anchor::TopRight, ccp(-10.f, -10.f));
       item->addChildAtPosition(colorMenu, Anchor::Center);
@@ -303,7 +303,7 @@ protected:
       this->m_isLoaded = true;
       this->updateUI();
       if (simulation.isActive()) this->onPalettePoolChanged();
-      if (this-> service.getPalettePool().palettes.size() <= 1) {
+      if (this-> service.getPoolSize() <= 1) {
         updateColorSprites(manager.getCurrentPalette().colors);
       } 
     };
@@ -399,7 +399,7 @@ protected:
   }
 
   void onNextPalette(CCObject *sender) {
-    if (service.getPalettePool().currentItem < service.getPalettePool().palettes.size() - 1) {
+    if (service.getPalettePool().currentItem < service.getPoolSize() - 1) {
       updateColorSprites(manager.getNextPalette().colors);
       updateUI();
 
@@ -425,7 +425,7 @@ protected:
   void onLockColorChannel(CCObject *sender) {
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
     auto menu = static_cast<CCMenu *>(item->getParent());
-    int index = static_cast<CCInteger*>(menu->getUserObject())->getValue();
+    int index = menu->getTag();
 
     NineSlice * colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
     manager.toggleColorLock(index, utils.colorToHex(colorSpr->getColor()));
@@ -435,7 +435,7 @@ protected:
   void onSwapColorChannel(CCObject *sender) {
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
     auto menu = static_cast<CCMenu *>(item->getParent());
-    int index = static_cast<CCInteger *>(menu->getUserObject())->getValue();
+    int index = menu->getTag();
 
     if (manager.isColorLocked(index)) {
       FLAlertLayer::create("This color is <cb>locked</c>", "Unlock this color to swap it.", "OK")->show();
@@ -458,7 +458,7 @@ protected:
   void onColorChannelHarmonies(CCObject *sender) {
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
     auto menu = static_cast<CCMenu *>(item->getParent());
-    int index = static_cast<CCInteger*>(menu->getUserObject())->getValue();
+    int index = menu->getTag();
 
     auto colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
     HarmonyPopup::create(colorSpr->getColor())->show();
@@ -492,7 +492,7 @@ protected:
 
       if (i < colors.size()) {
         NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons[i]->getNormalImage());
-        applyColorToSprite(colorSpr, colors.at(i));
+        utils.applyColorToSprite(colorSpr, colors.at(i));
       }
     }
 
@@ -507,13 +507,13 @@ protected:
     m_infoLabel->setString(
         fmt::format("Results: {} - {}",
                     service.getPalettePool().currentItem + 1,
-                    service.getPalettePool().palettes.size())
+                    service.getPoolSize())
             .c_str());
   }
 
   void updateSimulationLabels() {
     m_simulationColorsLabel->setString(
-        fmt::format("Modified Colors: {}", simulation.getAffectedColors()).c_str());
+        fmt::format("Modified Colors: {}", simulation.getModifiedColors()).c_str());
     m_simulationSavedLabel->setString(
         fmt::format("Saved Colors: {}", simulation.getSavedColors()).c_str());
   }
@@ -526,7 +526,7 @@ protected:
       updateLockButton(index, manager.isColorLocked(index));
 
       float width = cropWidth / limit;
-      btn->setNormalImage(createColorSpr(index, limit, width, 100.f));
+      btn->setNormalImage(SpriteBuilder::createColorSpr(btn, index, limit, width, 100.f));
       btn->setContentSize({width, 100.f});
       btn->updateSprite();
       btn->updateLayout();
@@ -537,7 +537,7 @@ protected:
   void updateNavigationButtons() {
     if (m_isLoaded) {
       int currentIndex = service.getPalettePool().currentItem;
-      int totalItems = service.getPalettePool().palettes.size();
+      int totalItems = service.getPoolSize();
       int prevOpacity = currentIndex > 0 ? 255 : 200;
       int nextOpacity = currentIndex < totalItems - 1 ? 255 : 200;
 
@@ -638,36 +638,6 @@ protected:
     it means that we're in a loaded palette and we should iterate colors from palette size instead of requested colors */
     int limit = isCustomPalette ? manager.getCurrentPalette().colors.size() : manager.getRequest().num_colors;
     return limit;
-  }
-
-  NineSlice* createColorSpr(int index, int limit, float width = 0.f, float height = 0.f) {
-    CCMenuItemSpriteExtra* colorBtn = m_colorButtons[index];
-    bool flag = colorBtn->getUserFlag("corner"_spr);
-    bool isRightCorner = index == limit - 1;
-    bool init = width == 0.f && height == 0.f;
-    bool create = init || isRightCorner && !flag || flag && !isRightCorner;
-    NineSlice *colorSpr;
-
-    if (create) {
-      bool isCorner = index == 0 || index == limit - 1;
-      const char *spriteName = isCorner ? SpriteBuilder::backgroundSprName : SpriteBuilder::squareSprName;
-      CCRect rect = isCorner ? CCRect{0, 0, 50, 80} : CCRect{0, 0, 80, 80};
-
-      colorSpr = NineSlice::create(spriteName, rect);
-      colorSpr->setRotation(isCorner && index == limit - 1 ? 180.f : 0.f);
-    } else {
-      colorSpr = static_cast<NineSlice *>(colorBtn->getNormalImage());
-    }
-    colorBtn->setUserFlag("corner"_spr, isRightCorner);
-    colorSpr->setContentSize({width, height});
-    colorSpr->setColor({255, 255, 255});
-    return colorSpr;
-  }
-
-  void applyColorToSprite(NineSlice* sprite, std::string hex = "#FFFFFF") {
-    hex = hex.length() == 7 ? hex : "#FFFFFF"; // Fallback to white if the hex code is invalid
-    hex.erase(0, 1); // Removes the '#' character
-    sprite->setColor(utils.hexToColor(hex));
   }
 };
 

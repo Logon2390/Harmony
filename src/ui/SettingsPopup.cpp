@@ -281,8 +281,8 @@ protected:
     m_temperature->setString(geode::utils::numToString(manager.getRequest().temperature, 1));
 
     int results = (
-      service.getPalettePool().palettes.size() == 0)
-      ? 10 : service.getPalettePool().palettes.size();
+      service.getPoolSize() == 0)
+      ? 10 : service.getPoolSize();
 
     m_results->setString(geode::utils::numToString(results));
   }
