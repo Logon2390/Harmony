@@ -9,9 +9,9 @@ using namespace geode::prelude;
 
 class SimulationOverlay : public NineSlice {
 public:
-  static SimulationOverlay *create() {
+  static SimulationOverlay *create(bool isLiveColorsEnabled, float positionY) {
     auto overlay = new SimulationOverlay();
-    if (overlay->init()) {
+    if (overlay->init(isLiveColorsEnabled, positionY)) {
       overlay->autorelease();
       return overlay;
     }
@@ -41,12 +41,16 @@ protected:
   CCMenuItemSpriteExtra* m_visibilityBtn;
   CCMenuItemSpriteExtra* m_shuffleBtn;
   const float width = 250.f;
-  const float height = 15.f;
+  const float height = 20.f;
   bool m_isHidden = false;
 
-  bool init() {
+  bool init(bool isLiveColorsEnabled, float positionY) {
     if (!this->initWithFile(SpriteBuilder::backgroundSmallSprName, {0.0f, 0.0f, 40.0f, 40.0f}, {})) return false;
 
+    auto winSize = CCDirector::sharedDirector()->getWinSize();
+    float offsetY = isLiveColorsEnabled ? positionY + 45.f : positionY + 30.f;
+
+    this->setPosition({ winSize.width / 2.f, offsetY });
     this->setContentSize({width, height});
     this->setColor({ 0, 0, 0 });
     this->setOpacity(150);
@@ -88,7 +92,7 @@ protected:
       ->setAxisAlignment(AxisAlignment::Start)
       ->setCrossAxisLineAlignment(AxisAlignment::Center)
       ->setCrossAxisOverflow(false)
-      ->setAutoScale(false));
+      ->setAutoScale(true));
 
     this->addChildAtPosition(m_colors, Anchor::Center, ccp(10.f, 0.f));
     m_colorSprites = CCArray::createWithCapacity(settings.MAX_COLORS);
@@ -96,7 +100,6 @@ protected:
     for (int i = 0; i < settings.MAX_COLORS; i++) {
       CCSprite *colorSpr = CCSprite::create(SpriteBuilder::circleSprName);
       m_colorSprites->addObject(colorSpr);
-      colorSpr->setScale(1.2f);
       colorSpr->setVisible(false);
       m_colors->addChild(colorSpr);
     }
@@ -150,8 +153,8 @@ protected:
 
     m_prev->setOpacity(prevOpacity);
     m_next->setOpacity(nextOpacity);
-    m_prev->setEnabled(currentIndex > 0);
-    m_next->setEnabled(currentIndex < totalItems - 1);
+    m_prev->setEnabled(currentIndex > 0 && totalItems > 1);
+    m_next->setEnabled(currentIndex < totalItems - 1 && totalItems > 1);
   }
 
   void updateInfoLabel() {

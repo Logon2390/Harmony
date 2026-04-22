@@ -43,26 +43,23 @@ class $modify(MyEditorUI, EditorUI) {
             m_fields->manager.m_settings = settings;
         }
 
-        m_fields->simulationOverlay = SimulationOverlay::create();
-        auto winSize = CCDirector::sharedDirector()->getWinSize();
-        bool isLiveColorsEnabled = (this->getChildByID("alphalaneous.tinker/live-colors-menu") != nullptr);
-        float offsetY = isLiveColorsEnabled ? this->m_toolbarHeight + 45.f : this->m_toolbarHeight + 30.f;
-        
-        m_fields->simulationOverlay->setPosition({ winSize.width / 2.f, offsetY });    
-        this->addChild(m_fields->simulationOverlay);
-        
-        m_fields->manager.onSimulationToggled = [this]() {
-            if (m_fields->simulationOverlay) {
-                m_fields->simulationOverlay->onToggleVisibility();
-            }
-        };
-
         auto menu = this->getChildByID("editor-buttons-menu");
-
         if (menu != nullptr) {
             menu->addChild(m_fields->mainBtn);
             menu->updateLayout();
         }
+
+        this->runAction(CallFuncExt::create([this]() {
+          bool isLiveColorsEnabled = (this->getChildByID("alphalaneous.tinker/live-colors-menu") != nullptr);
+          m_fields->simulationOverlay = SimulationOverlay::create(isLiveColorsEnabled, this->m_toolbarHeight);
+          this->addChild(m_fields->simulationOverlay);
+
+          m_fields->manager.onSimulationToggled = [this]() {
+            if (m_fields->simulationOverlay) {
+              m_fields->simulationOverlay->onToggleVisibility();
+            }
+          };
+        }));
 
         return true;
     }
