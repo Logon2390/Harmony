@@ -45,7 +45,7 @@ protected:
   bool m_isHidden = false;
 
   bool init() {
-    if (!this->initWithFile("square02b_small.png", {0.0f, 0.0f, 40.0f, 40.0f}, {})) return false;
+    if (!this->initWithFile(SpriteBuilder::backgroundSmallSprName, {0.0f, 0.0f, 40.0f, 40.0f}, {})) return false;
 
     this->setContentSize({width, height});
     this->setColor({ 0, 0, 0 });

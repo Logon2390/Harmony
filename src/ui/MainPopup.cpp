@@ -70,7 +70,7 @@ protected:
         CircleBaseColor::Green, CircleBaseSize::Tiny);
 
     auto infoSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::helpBtnSprName);
-    infoSpr->setScale(0.55f);
+    infoSpr->setScale(0.7f);
 
     auto settingsSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::optionsBtnSprName);
     settingsSpr->setScale(0.55f);
@@ -364,6 +364,7 @@ protected:
           self->manager.clearLoaded();
           self->updateColorSprites(result.colors);
           self->updateUI();
+          self->onPalettePoolChanged();
         } else {
           FLAlertLayer::create("Error", "Failed to generate palette. Please try again.", "OK")->show();
         }

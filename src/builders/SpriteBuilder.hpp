@@ -16,6 +16,7 @@ namespace SpriteBuilder {
     constexpr const char* arrow3SprName = "GJ_arrow_03_001.png";
     constexpr const char *infoIconName = "GJ_infoIcon_001.png";
     constexpr const char *backgroundSprName = "square02b_001.png";
+    constexpr const char *backgroundSmallSprName = "square02b_small.png";
     constexpr const char *squareSprName = "square.png";
     constexpr const char *hideSprName = "hideBtn_001.png";
     constexpr const char *helpBtnSprName = "GJ_helpBtn_001.png";
