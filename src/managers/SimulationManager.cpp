@@ -13,10 +13,6 @@ bool SimulationManager::restore()
         m_effectManager->setColorAction(colorAction, colorID);
     }
 
-    for (auto& [colorID, colorAction] : m_colorActions) {
-        if (colorAction) colorAction->release();
-    }
-
     m_colorActions.clear();
     return false;
 }
@@ -107,8 +103,6 @@ void SimulationManager::saveOrginalColorActions()
         copy->m_copyColorLoop = colorAction->m_copyColorLoop;
         copy->m_inheritanceNode = colorAction->m_inheritanceNode;
         copy->m_colorSprite = colorAction->m_colorSprite;
-        copy->retain();
-
         m_colorActions[colorAction->m_colorID] = copy;
     }
 }
@@ -116,6 +110,21 @@ void SimulationManager::saveOrginalColorActions()
 bool SimulationManager::shouldDisplayOverlay()
 {
     return getModifiedColors() > 0 && m_isActive;
+}
+
+std::vector<std::string> SimulationManager::getSpecialColors() 
+{
+    std::vector<std::string> result;
+    for (const auto& colorID : m_specialColors) {
+        auto colorAction = m_effectManager->getColorAction(colorID);
+        if (colorAction) {
+            ccColor3B color = colorAction->m_fromColor;
+            result.push_back(ColorUtils::get().colorToHex(color));
+        } else {
+            result.push_back("#FFFFFF");
+        }
+    }
+    return result;
 }
 
 bool SimulationManager::toggleSimulationFlag()
