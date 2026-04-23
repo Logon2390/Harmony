@@ -32,14 +32,18 @@ void ColorUtils::copyColor(ccColor3B color, CCObject *sender)
     Notification::create("Color copied!", NotificationIcon::Success)->show();
 }
 
-void ColorUtils::applyColorToSprite(NineSlice *sprite, std::string hex) {
-  hex = hex.length() == 7 ? hex : "#FFFFFF"; // Fallback to white if the hex code is invalid
-  hex.erase(0, 1); // Removes the '#' character
-  sprite->setColor(hexToColor(hex));
+void ColorUtils::applyColorToSprite(NineSlice *sprite, std::string hex) 
+{
+    if (!hex.empty() && hex[0] == '#') hex.erase(0, 1);
+    if (hex.length() != 6) hex = "FFFFFF";
+
+    sprite->setColor(hexToColor(hex));
 }
 
-void ColorUtils::applyColorToSprite(CCSprite *sprite, std::string hex) {
-  hex = hex.length() == 7 ? hex : "#FFFFFF"; // Fallback to white if the hex code is invalid
-  hex.erase(0, 1); // Removes the '#' character
-  sprite->setColor(hexToColor(hex));
+void ColorUtils::applyColorToSprite(CCSprite *sprite, std::string hex) 
+{
+    if (!hex.empty() && hex[0] == '#') hex.erase(0, 1);
+    if (hex.length() != 6)hex = "FFFFFF";
+    
+    sprite->setColor(hexToColor(hex));
 }

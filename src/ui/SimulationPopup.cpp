@@ -1,5 +1,6 @@
 #include "../managers/SimulationManager.hpp"
 #include "../managers/SettingsManager.hpp"
+#include "../ui/SimulationSetupPopup.cpp"
 #include "../network/HueMintService.hpp"
 #include "../builders/SpriteBuilder.hpp"
 
@@ -66,6 +67,11 @@ protected:
     ButtonSprite *specialColorsBtn = ButtonSprite::create("Special Colors");
     specialColorsBtn->setScale(0.7f);
 
+    CCMenu *specialMenu = createMenu(buttonLayout);
+    specialMenu->addChild(CCMenuItemSpriteExtra::create(specialColorsBtn, this, menu_selector(SimulationPopup::onSpecialColors)));
+    CCMenuItemSpriteExtra* specialInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(),this, menu_selector(SimulationPopup::onSpecialColorsInfo));
+    createSelectorRow("Special Colors", specialMenu, specialInfoBtn, 10.f);
+
     ButtonSprite *customColorsBtn = ButtonSprite::create("Custom Colors");
     customColorsBtn->setScale(0.7f);
 
@@ -119,6 +125,17 @@ protected:
       //manager.setMaxColors(value);
       onColorsChanged();
     }
+  }
+
+  void onSpecialColors(CCObject *) {
+    if (service.getPoolSize() == 0) {
+      FLAlertLayer::create(
+        "No palettes loaded",
+        "You need to have at least one palette loaded to start setting up custom colors. You can <cy>load a palette from the saved section </c> or <cg>generate a new one. </c>",
+        "OK")->show();
+      return;
+    }
+    SimulationSetupPopup::create(0, true)->show();
   }
 
   void onCustomColors(CCObject *) {

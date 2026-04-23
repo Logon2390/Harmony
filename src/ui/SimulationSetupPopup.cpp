@@ -9,9 +9,9 @@ using namespace geode::prelude;
 class SimulationSetupPopup : public Popup {
 public:
   std::function<void()> onColorSelect = []() {};
-  static SimulationSetupPopup *create(int colorID) {
+  static SimulationSetupPopup *create(int colorID, bool specialColors = false) {
     auto popup = new SimulationSetupPopup();
-    if (popup->init(colorID)) {
+    if (popup->init(colorID, specialColors)) {
       popup->autorelease();
       return popup;
     }
@@ -25,6 +25,7 @@ protected:
   HueMintService &service = HueMintService::get();
   ColorUtils &utils = ColorUtils::get();
   Ref<CCArray> m_colorButtons;
+  Ref<CCArray> m_labels;
   CCMenu* m_navMenu;
   CCMenu* m_colorsMenu;
   CCMenuItemSpriteExtra* m_prev;
@@ -40,11 +41,16 @@ protected:
   bool m_isSpecialColors = false;
   int selectedColorID = 0;
 
-  bool init(int colorID) {
+  bool init(int colorID, bool specialColors = false) {
     if (!Popup::init(width, height)) return false;
     this->setTitle(fmt::format("Setup Color channel {}", colorID).c_str());
+
     selectedColorID = colorID;
+    m_isSpecialColors = specialColors;
+    simulation.m_isSetupStage = true;
+
     m_colorButtons = CCArray::createWithCapacity(MAX_COLORS);
+    m_labels = CCArray::createWithCapacity(MAX_COLORS);
 
     RowLayout* mainLayout = RowLayout::create();
     mainLayout->setGap(0.f)
@@ -82,6 +88,7 @@ protected:
       CCLabelBMFont* label = CCLabelBMFont::create((std::to_string(i + 1)).c_str(), SpriteBuilder::bigFontName);
       label->setZOrder(3);
       label->setScale(0.3f);
+      m_labels->addObject(label);
 
       CCMenuItemSpriteExtra* item = CCMenuItemSpriteExtra::create(CCSprite::create(), this, menu_selector(SimulationSetupPopup::onColorSetup));
       m_colorButtons->addObject(item);
@@ -134,7 +141,9 @@ protected:
     m_navMenu->addChildAtPosition(m_resetAll, Anchor::Center, ccp(-220.f, 0.f));
     m_navMenu->addChildAtPosition(m_reset, Anchor::Center, ccp(-120.f, 0.f));
 
-    updateColorSprites(settings.getCurrentPalette().colors);
+    if (m_isSpecialColors) toggleSpecialColors();
+    else updateColorSprites(settings.getCurrentPalette().colors);
+
     m_colorsMenu->updateLayout();
     m_navMenu->updateLayout();
     return true;
@@ -165,8 +174,7 @@ protected:
 
   void onModeChange(CCObject*) {
     m_isSpecialColors = !m_isSpecialColors;
-    updateModeButton();
-    updateControlsVisibility(!m_isSpecialColors);
+    toggleSpecialColors();
   }
 
   void onPrevPalette(CCObject*) {
@@ -222,45 +230,84 @@ protected:
     }
   }
 
-  void updateColorButton(int index, int limit) {
-    bool isVisible = index < limit;
-    CCMenuItemSpriteExtra *btn = static_cast<CCMenuItemSpriteExtra *>(m_colorButtons->objectAtIndex(index));
+  void updateColorButton() {
+    auto colorButtons = m_colorButtons->asExt<CCMenuItemSpriteExtra*>();
+    int limit = m_isSpecialColors ? simulation.getSpecialColors().size() : COLORS_COUNT;
+    for (int i = 0; i < limit; i++) {
+      bool isVisible = i < limit;
+      CCMenuItemSpriteExtra *btn = colorButtons[i];
 
-    if (isVisible) {
-      float width = cropWidth / limit;
-      btn->setNormalImage(SpriteBuilder::createColorSpr(btn, index, limit, width, 50.f));
-      btn->setContentSize({width, 100.f});
-      btn->updateSprite();
-      btn->updateLayout();
+      if (isVisible) {
+        float width = cropWidth / limit;
+        btn->setNormalImage(SpriteBuilder::createColorSpr(btn, i, limit, width, 50.f));
+        btn->setContentSize({width, 100.f});
+        btn->setTag(m_isSpecialColors ? simulation.getSpecialColorIDs().at(i) : i);
+        btn->updateSprite();
+        btn->updateLayout();
+      }
+      btn->setVisible(isVisible);
     }
-    btn->setVisible(isVisible);
+    m_colorsMenu->updateLayout();
+  }
+
+  void updateColorLabels() {
+    int limit  = m_isSpecialColors ? simulation.getSpecialColors().size() : COLORS_COUNT;
+    auto labels = m_labels->asExt<CCLabelBMFont*>();
+
+    for (int i = 0; i < limit; i++) {
+      std::string name = m_isSpecialColors ? formatColorName(simulation.getSpecialColorIDs().at(i)) : std::to_string(i + 1);
+      labels[i]->setString(name.c_str());
+    }
   }
 
   void onColorSetup(CCObject* sender) {
     CCMenuItemSpriteExtra* item = static_cast<CCMenuItemSpriteExtra*>(sender);
     int colorIndex = item->getTag();
 
-    if (simulation.isColorSetup(selectedColorID)) {
-      int currentColorIndex = simulation.getColorSetup(selectedColorID);
-      geode::createQuickPopup(
-          "Color already setup",
-          fmt::format("This color channel ({}) is already setup with palette color: {}", selectedColorID, currentColorIndex + 1).c_str(),
-          "Cancel", "Replace", [this, colorIndex](auto, bool btn2) {
-            if (btn2) {
-              simulation.setup(selectedColorID, colorIndex);
-              Notification::create(fmt::format("Color channel {} setup with color {}", selectedColorID , colorIndex + 1).c_str(), NotificationIcon::Info)->show();
-              this->onClose(m_closeBtn);
+    if (!m_isSpecialColors) {
+      if (simulation.isColorSetup(selectedColorID)) {
+        int currentColorIndex = simulation.getColorSetup(selectedColorID);
+        geode::createQuickPopup(
+            "Color already setup",
+            fmt::format("This color channel ({}) is already setup with palette color: {}", formatColorName(selectedColorID), currentColorIndex + 1).c_str(),
+            "Cancel", "Replace", [this, colorIndex](auto, bool btn2) {
+              if (btn2) {
+                simulation.setup(selectedColorID, colorIndex);
+                Notification::create(
+                  fmt::format("Color channel {} setup with color {}", formatColorName(selectedColorID), colorIndex + 1).c_str(), 
+                  NotificationIcon::Info)->show();
+                this->onClose(m_closeBtn);
+              }
             }
-          }
-        );
+          );
+      } else {
+        simulation.setup(selectedColorID, colorIndex);
+        Notification::create(
+          fmt::format("Color channel {} setup with color {}", formatColorName(selectedColorID), colorIndex + 1).c_str(), 
+          NotificationIcon::Info)->show();
+        this->onClose(m_closeBtn);
+      }
     } else {
-      simulation.setup(selectedColorID, colorIndex);
-      Notification::create(fmt::format("Color channel {} setup with color {}", selectedColorID , colorIndex + 1).c_str(), NotificationIcon::Info)->show();
-      this->onClose(m_closeBtn);
+      selectedColorID = item->getTag();
+      Notification::create(
+        fmt::format("Selected color channel {} for special colors setup", formatColorName(selectedColorID)).c_str(),
+        NotificationIcon::Info
+      )->show();
+      m_isSpecialColors = false;
+      toggleSpecialColors();
     }
   }
 
+  void toggleSpecialColors() {
+    updateModeButton();
+    updateControlsVisibility(!m_isSpecialColors);
+    updateColorButton();
+    updateColorLabels();
+    updateColorSprites(m_isSpecialColors ? simulation.getSpecialColors() : settings.getCurrentPalette().colors);
+  }
+
   void onClose(CCObject* sender) override {
+    if (m_isSpecialColors) simulation.m_isSetupStage = false;
     onColorSelect();
     Popup::onClose(sender);
   }
