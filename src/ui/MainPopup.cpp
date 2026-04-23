@@ -30,7 +30,7 @@ protected:
   SettingsManager &manager = SettingsManager::get();
   SimulationManager &simulation = SimulationManager::get();
   HueMintService &service = HueMintService::get();
-  std::array<CCMenuItemSpriteExtra *, SettingsManager::MAX_COLORS> m_colorButtons;
+  Ref<CCArray> m_colorButtons;
   TextInput* m_nameInput;
   LoadingSpinner* m_spinner = nullptr;
   CCLabelBMFont* m_infoLabel;
@@ -55,6 +55,7 @@ protected:
     if (!Popup::init(width, height)) return false;
 
     m_isLoaded = service.getPoolSize() > 0;
+    m_colorButtons = CCArray::createWithCapacity(manager.MAX_COLORS);
 
     auto resetSpr = CircleButtonSprite::create(
       // @geode-ignore(unknown-resource)
@@ -162,7 +163,7 @@ protected:
 
       //init button with a default values, this will be updated in updateUI and loadLastState
       CCMenuItemSpriteExtra* item = CCMenuItemSpriteExtra::create(CCSprite::create(), this, menu_selector(MainPopup::onColorChannel));
-      m_colorButtons[i] = item;
+      m_colorButtons->addObject(item);
 
       item->m_scaleMultiplier = 1.f;
       item->setNormalImage(SpriteBuilder::createColorSpr(item, i, manager.getRequest().num_colors));
@@ -300,7 +301,7 @@ protected:
     SavedPopup* popup = SavedPopup::create();
     popup->show();
     popup->onLoadPalette = [this]() {
-      this->m_isLoaded = true;
+      this->m_isLoaded = service.getPoolSize() > 0;
       this->updateUI();
       if (simulation.isActive()) this->onPalettePoolChanged();
       if (this-> service.getPoolSize() <= 1) {
@@ -334,7 +335,7 @@ protected:
     auto colorSpr = static_cast<ColorChannelSprite *>(item->getNormalImage());
 
     if (manager.isColorLocked(utils.colorToHex(colorSpr->getColor()))) {
-      FLAlertLayer::create("This color is <cb>locked</c>", "Unlock this color to edit it.", "OK")->show();
+      FLAlertLayer::create("This color is locked", "<cb>Unlock</c> this color to edit it.", "OK")->show();
       return;
     }
 
@@ -428,7 +429,7 @@ protected:
     auto menu = static_cast<CCMenu *>(item->getParent());
     int index = menu->getTag();
 
-    NineSlice * colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
+    NineSlice * colorSpr = static_cast<NineSlice *>(m_colorButtons->asExt<CCMenuItemSpriteExtra*>()[index]->getNormalImage());
     manager.toggleColorLock(index, utils.colorToHex(colorSpr->getColor()));
     updateLockButton(index, manager.isColorLocked(index));
   }
@@ -439,7 +440,7 @@ protected:
     int index = menu->getTag();
 
     if (manager.isColorLocked(index)) {
-      FLAlertLayer::create("This color is <cb>locked</c>", "Unlock this color to swap it.", "OK")->show();
+      FLAlertLayer::create("This color is locked", "<cb>Unlock</c> this color to swap it.", "OK")->show();
       return;
     }
 
@@ -461,7 +462,7 @@ protected:
     auto menu = static_cast<CCMenu *>(item->getParent());
     int index = menu->getTag();
 
-    auto colorSpr = static_cast<NineSlice *>(m_colorButtons[index]->getNormalImage());
+    auto colorSpr = static_cast<NineSlice *>(m_colorButtons->asExt<CCMenuItemSpriteExtra*>()[index]->getNormalImage());
     HarmonyPopup::create(colorSpr->getColor())->show();
   }
 
@@ -487,12 +488,13 @@ protected:
   }
 
   void updateColorSprites(std::vector<std::string> colors) {
+    CCArrayExt<CCMenuItemSpriteExtra*> colorButtons = m_colorButtons->asExt();
     int limit = getCurrentColorLimit();
     for (size_t i = 0; i < manager.MAX_COLORS; i++) {
       updateColorButton(i, limit);
 
       if (i < colors.size()) {
-        NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons[i]->getNormalImage());
+        NineSlice *colorSpr = static_cast<NineSlice *>(colorButtons[i]->getNormalImage());
         utils.applyColorToSprite(colorSpr, colors.at(i));
       }
     }
@@ -504,7 +506,7 @@ protected:
 
   void updateInfoLabel() {
     if (!m_isLoaded) return m_infoLabel->setString("");
-
+    m_infoLabel->setVisible(m_isLoaded);
     m_infoLabel->setString(
         fmt::format("Results: {} - {}",
                     service.getPalettePool().currentItem + 1,
@@ -521,7 +523,7 @@ protected:
 
   void updateColorButton(int index, int limit) {
     bool isVisible = index < limit;
-    CCMenuItemSpriteExtra *btn = m_colorButtons[index];
+    CCMenuItemSpriteExtra *btn = m_colorButtons->asExt<CCMenuItemSpriteExtra*>()[index];
 
     if (isVisible) {
       updateLockButton(index, manager.isColorLocked(index));
@@ -556,7 +558,7 @@ protected:
   }
 
   void updateLockButton(int index, bool locked) {
-    CCMenuItemSpriteExtra * color = m_colorButtons[index];
+    CCMenuItemSpriteExtra * color = m_colorButtons->asExt<CCMenuItemSpriteExtra*>()[index];
     CCMenuItemSpriteExtra * lockBtn = static_cast<CCMenuItemSpriteExtra *>(color->getChildByIDRecursive("lock"));
 
     const char *frame = locked ? SpriteBuilder::lockClosedSprName : SpriteBuilder::lockOpenSprName;
@@ -565,14 +567,16 @@ protected:
   }
 
   void updateSaveButton() {
-    if (!m_isLoaded) return;
     bool isSaved = data.isSaved(HueMintService::get().getPalettePool().currentItem);
+    m_save->setVisible(m_isLoaded);
+    m_save->setEnabled(!isSaved);
+    if (!m_isLoaded) return;
+
     bool isLoaded = SettingsManager::get().isLoaded(manager.getCurrentPalette().id);
     std::string title = isSaved ? "Saved" : isLoaded ? "Update" : "Save";
     ButtonSprite* saveSpr = static_cast<ButtonSprite*>(m_save->getNormalImage());
     saveSpr->setString(title.c_str());
     saveSpr->updateBGImage(isSaved ? "GJ_button_02.png" : isLoaded ? "GJ_button_03.png" : "GJ_button_01.png");
-    m_save->setEnabled(!isSaved);
   }
 
   void updateNameInput() {
@@ -618,15 +622,16 @@ protected:
   }
 
   void handleHide(bool show) {
+    CCArrayExt<CCMenuItemSpriteExtra*> colorButtons = m_colorButtons->asExt();
     int colors = getCurrentColorLimit();
     for (int i = 0; i < colors; i++) {
-      CCMenu *menu = static_cast<CCMenu *>(m_colorButtons[i]->getChildByID("menu"));
+      CCMenu *menu = static_cast<CCMenu *>(colorButtons[i]->getChildByID("menu"));
       if (menu) menu->setVisible(show);
     }
   }
 
   bool isColorMenuVisible() {
-    CCMenu *menu = static_cast<CCMenu *>(m_colorButtons[0]->getChildByID("menu"));
+    CCMenu *menu = static_cast<CCMenu *>(m_colorButtons->asExt<CCMenuItemSpriteExtra*>()[0]->getChildByID("menu"));
     return menu ? menu->isVisible() : false;
   }
 
