@@ -11,8 +11,8 @@ SavedPalette &SettingsManager::getCurrentPalette() {
 
   int totalItems = service.getPoolSize();
   int currentIndex = service.getPalettePool().currentItem;
-  int index = currentIndex >= totalItems ? totalItems - 1 : currentIndex;  
-  return service.getPalettePool().palettes.at(currentIndex);
+  int index = currentIndex >= totalItems ? totalItems - 1 : currentIndex;
+  return service.getPalettePool().palettes.at(index);
 }
 
 SavedPalette SettingsManager::getNextPalette()
@@ -169,6 +169,10 @@ void SettingsManager::removePalette(const std::string &id)
     palettes.erase(std::remove_if(palettes.begin(), palettes.end(), [&id](const SavedPalette &p) {
         return p.id == id; }), palettes.end());
     m_loadedPalettes.erase(id);
+
+    if (service.getPalettePool().currentItem >= palettes.size() && !palettes.empty()) {
+        service.getPalettePool().currentItem = palettes.size() - 1;
+    }
 }
 
 void SettingsManager::setLoaded(const std::string &id)

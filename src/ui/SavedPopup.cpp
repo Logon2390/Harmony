@@ -217,7 +217,7 @@ protected:
       Notification::create("Palette loaded", NotificationIcon::Success)->show();
     }
 
-    updateUseBtn(paletteBtn, SettingsManager::get().isLoaded(paletteId));
+    updateUseBtn(paletteBtn, !isLoaded);
     onLoadPalette();
   }
 
