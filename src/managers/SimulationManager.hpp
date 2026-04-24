@@ -23,11 +23,13 @@ class SimulationManager {
         bool shouldDisplayOverlay();
         void saveOrginalColorActions();
         const bool isActive() const { return m_isActive; }
+        const void setColors(int colors) { m_colors = colors; }
         const int getColors() const { return m_colors; }
         const int getSavedColors() const { return static_cast<int>(m_colorActions.size()); }
         const int getModifiedColors() const { return static_cast<int>(m_colorSettings.size()); }
         const std::array<int, 6>& getSpecialColorIDs() const { return m_specialColors; }
         const std::unordered_map<int, int>& getColorSettings() const { return m_colorSettings; }
+        std::unordered_map<int, ccColor3B> getColorsByIndex(int index);
         std::vector<std::string> getSpecialColors();
         std::function<void()> onSimulationToggled = []() {};
 

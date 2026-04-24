@@ -9,7 +9,6 @@ using namespace geode::prelude;
 
 class SimulationPopup : public Popup {
 public:
-  std::function<void()> onColorsChanged = []() {};
   static SimulationPopup *create() {
     auto popup = new SimulationPopup();
     if (popup->init()) {
@@ -25,9 +24,9 @@ protected:
   HueMintService &service = HueMintService::get();
   CCMenu* m_infoMenu;
   TextInput *m_colors;
-
   const float width = 300.f;
   const float height = 180.f;
+  int ColorsCount = simulation.getMaxColorCount();
 
   bool init() {
     if (!Popup::init(width, height)) return false;
@@ -80,40 +79,37 @@ protected:
     CCMenuItemSpriteExtra* customInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(),this, menu_selector(SimulationPopup::onCustomColorsInfo));
     createSelectorRow("Custom Colors", customMenu, customInfoBtn, -20.f);
 
-    ButtonSprite *backupsBtn = ButtonSprite::create("restore backup");
-    backupsBtn->setScale(0.7f);
+    ButtonSprite *resetAllBtn = ButtonSprite::create("Reset All");
+    resetAllBtn->setScale(0.7f);
 
-    CCMenu *backupsMenu = createMenu(buttonLayout);
-    backupsMenu->addChild(CCMenuItemSpriteExtra::create(backupsBtn, this, menu_selector(SimulationPopup::onBackups)));
-    CCMenuItemSpriteExtra* backupsInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(),this, menu_selector(SimulationPopup::onBackupsInfo));
-    createSelectorRow("Backups", backupsMenu, backupsInfoBtn, -50.f);
+    CCMenu *resetAllMenu = createMenu(buttonLayout);
+    resetAllMenu->addChild(CCMenuItemSpriteExtra::create(resetAllBtn, this, menu_selector(SimulationPopup::onResetAll)));
+    CCMenuItemSpriteExtra* resetAllInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(),this, menu_selector(SimulationPopup::onResetAllInfo));
+    createSelectorRow("Reset All", resetAllMenu, resetAllInfoBtn, -50.f);
 
     m_infoMenu->updateLayout();
     return true;
   }
 
   void onDecreaseColors(CCObject *) {
-    int current = 4; //manager.getRequest().num_colors;
-    if (current > SettingsManager::MIN_COLORS) {
-      //manager.setMaxColors(current - 1);
-      m_colors->setString(geode::utils::numToString(current - 1));
+    if (ColorsCount > SettingsManager::MIN_COLORS) {
+      simulation.setColors(--ColorsCount);
+      m_colors->setString(geode::utils::numToString(ColorsCount));
     } else {
-      //manager.setMaxColors(SettingsManager::MAX_COLORS);
-      m_colors->setString(geode::utils::numToString(SettingsManager::MAX_COLORS));
+      ColorsCount = simulation.getMaxColorCount();
+      m_colors->setString(geode::utils::numToString(ColorsCount));
     }
-    onColorsChanged();
   }
 
   void onIncreaseColors(CCObject *) {
-    int current = 4; //manager.getRequest().num_colors;
-    if (current < SettingsManager::MAX_COLORS) {
-      //manager.setMaxColors(current + 1);
-      m_colors->setString(geode::utils::numToString(current + 1));
+    if (ColorsCount < simulation.getMaxColorCount()) {
+      ColorsCount++;
+      simulation.setColors(ColorsCount);
+      m_colors->setString(geode::utils::numToString(ColorsCount));
     } else {
-      //manager.setMaxColors(SettingsManager::MIN_COLORS);
-      m_colors->setString(geode::utils::numToString(SettingsManager::MIN_COLORS));
+      ColorsCount = SettingsManager::MIN_COLORS;
+      m_colors->setString(geode::utils::numToString(ColorsCount));
     }
-    onColorsChanged();
   }
 
   void onColorsInput(gd::string input) {
@@ -121,9 +117,10 @@ protected:
 
     if (result.isOk()) {
       int value = result.unwrap();
-      if (value < SettingsManager::MIN_COLORS || value > SettingsManager::MAX_COLORS) return;
-      //manager.setMaxColors(value);
-      onColorsChanged();
+      if (value < SettingsManager::MIN_COLORS || value > simulation.getMaxColorCount()) return;
+      ColorsCount = value;
+      simulation.setColors(ColorsCount);
+      m_colors->setString(geode::utils::numToString(ColorsCount));
     }
   }
 
@@ -150,10 +147,16 @@ protected:
     GJColorSetupLayer::create(simulation.m_settings)->show();
   }
 
-  void onBackups(CCObject *) {
-    //manager.resetColors();
-    //m_colors->setString("6");
-    //onColorsChanged();
+  void onResetAll(CCObject *) {
+    geode::createQuickPopup(
+      "Reset all colors settings",
+      "Are you sure you want to reset all colors settings?",
+      "Cancel", "Reset", [this](auto, bool btn2) {
+        if (btn2) {
+          simulation.reset();
+          Notification::create("All color channel setups removed", NotificationIcon::Info)->show();
+        }
+      });
   }
 
   void onColorsInfo(CCObject *) {
@@ -166,6 +169,10 @@ protected:
 
   void onCustomColorsInfo(CCObject *) {
     FLAlertLayer::create("Custom colors info", "text", "OK")->show();
+  }
+
+  void onResetAllInfo(CCObject *) {
+    FLAlertLayer::create("Reset All info", "text", "OK")->show();
   }
 
   void onBackupsInfo(CCObject *) {

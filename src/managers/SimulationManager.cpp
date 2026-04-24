@@ -127,6 +127,20 @@ std::vector<std::string> SimulationManager::getSpecialColors()
     return result;
 }
 
+std::unordered_map<int, ccColor3B> SimulationManager::getColorsByIndex(int index) 
+{
+    std::unordered_map<int, ccColor3B> result;
+    for (const auto& [colorID, colorIndex] : m_colorSettings) {
+        if (colorIndex == index) {
+            auto colorAction = m_effectManager->getColorAction(colorID);
+            if (colorAction) {
+                result[colorID] = colorAction->m_fromColor;
+            }
+        }
+    }
+    return result;
+}
+
 bool SimulationManager::toggleSimulationFlag()
 {
     m_isActive = !m_isActive;

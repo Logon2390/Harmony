@@ -20,15 +20,15 @@ class $modify(MyEditorPauseLayer, EditorPauseLayer) {
   }
 
   void onSave(CCObject* sender) {
-    onExitRestore();
+    onExitRestore(false);
     EditorPauseLayer::onSave(sender);
   }
 
   // restore original colors when exiting editor
-  void onExitRestore() {
+  void onExitRestore(bool reset = true) {
+    if (reset) SimulationManager::get().reset();
     if (SimulationManager::get().isActive()) {
       SimulationManager::get().toggleSimulation();
-      SimulationManager::get().reset();
       Notification::create("Simulation mode stopped, original colors restored", NotificationIcon::Info)->show();
     }
   }

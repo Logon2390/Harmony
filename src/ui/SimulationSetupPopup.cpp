@@ -26,6 +26,8 @@ protected:
   ColorUtils &utils = ColorUtils::get();
   Ref<CCArray> m_colorButtons;
   Ref<CCArray> m_labels;
+  Ref<CCArray> m_colorSetups;
+  Ref<CCArray> m_paletteColors;
   CCMenu* m_navMenu;
   CCMenu* m_colorsMenu;
   CCMenuItemSpriteExtra* m_prev;
@@ -33,7 +35,8 @@ protected:
   CCMenuItemSpriteExtra* m_reset;
   CCMenuItemSpriteExtra* m_resetAll;
   CCMenuItemSpriteExtra* m_mode;
-  const int COLORS_COUNT = simulation.getMaxColorCount();
+  ScrollLayer* m_setups;
+  const int COLORS_COUNT = simulation.getColors();
   const int MAX_COLORS = settings.MAX_COLORS;
   const float width = 440.f;
   const float height = 260.f;
@@ -43,7 +46,8 @@ protected:
 
   bool init(int colorID, bool specialColors = false) {
     if (!Popup::init(width, height)) return false;
-    this->setTitle(fmt::format("Setup Color channel {}", colorID).c_str());
+    std::string title = specialColors ? "Setup Special Colors" : fmt::format("Setup color channel {}", formatColorName(colorID));
+    this->setTitle(title.c_str());
 
     selectedColorID = colorID;
     m_isSpecialColors = specialColors;
@@ -51,6 +55,8 @@ protected:
 
     m_colorButtons = CCArray::createWithCapacity(MAX_COLORS);
     m_labels = CCArray::createWithCapacity(MAX_COLORS);
+    m_paletteColors = CCArray::createWithCapacity(MAX_COLORS);
+    m_colorSetups = CCArray::create();  
 
     RowLayout* mainLayout = RowLayout::create();
     mainLayout->setGap(0.f)
@@ -116,6 +122,8 @@ protected:
     m_mode = CCMenuItemSpriteExtra::create(ButtonSprite::create("Special colors"), this, menu_selector(SimulationSetupPopup::onModeChange));
     m_mode->setAnchorPoint(ccp(0.f, 0.5f));
     m_mode->setScale(0.6f);
+    m_mode->setVisible(!m_isSpecialColors);
+    m_mode->setEnabled(!m_isSpecialColors);
     m_mode->m_baseScale = 0.6f;
     m_mode->m_scaleMultiplier = 1.1f;
 
@@ -141,6 +149,15 @@ protected:
     m_navMenu->addChildAtPosition(m_resetAll, Anchor::Center, ccp(-220.f, 0.f));
     m_navMenu->addChildAtPosition(m_reset, Anchor::Center, ccp(-120.f, 0.f));
 
+    m_setups = ScrollLayer::create({cropWidth - 20.f, 120.f}, true, true);
+    m_setups->setZOrder(2);
+    m_setups->m_contentLayer->setLayout(ScrollLayer::createDefaultListLayout());
+
+    Scrollbar* scrollbar = Scrollbar::create(m_setups);
+    setupBG->addChildAtPosition(m_setups, Anchor::BottomLeft, ccp(10.f, 0.f));
+    setupBG->addChildAtPosition(scrollbar, Anchor::Right, ccp(-5.f, 0.f));
+
+    initColorsSetup();
     if (m_isSpecialColors) toggleSpecialColors();
     else updateColorSprites(settings.getCurrentPalette().colors);
 
@@ -156,6 +173,8 @@ protected:
       "Cancel", "Reset", [this](auto, bool btn2) {
         if (btn2) {
           simulation.reset();
+          handleResetAll();
+          Notification::create("All color channel setups removed", NotificationIcon::Info)->show();
         }
       });
   }
@@ -167,7 +186,8 @@ protected:
       "Cancel", "Reset", [this](auto, bool btn2) {
         if (btn2) {
           simulation.remove(selectedColorID);
-          Notification::create(fmt::format("Color channel {} setup removed", selectedColorID).c_str(), NotificationIcon::Info)->show();
+          handleReset(selectedColorID);
+          Notification::create(fmt::format("Color channel {} setup removed", formatColorName(selectedColorID)).c_str(), NotificationIcon::Info)->show();
         }
       });
   }
@@ -180,11 +200,13 @@ protected:
   void onPrevPalette(CCObject*) {
     updateColorSprites(settings.getPrevPalette().colors);
     updateNavigationButtons();
+    updatePaletteColors();
   }
 
   void onNextPalette(CCObject*) {
     updateColorSprites(settings.getNextPalette().colors);
     updateNavigationButtons();
+    updatePaletteColors();
   }
 
   void updateNavigationButtons() {
@@ -233,7 +255,7 @@ protected:
   void updateColorButton() {
     auto colorButtons = m_colorButtons->asExt<CCMenuItemSpriteExtra*>();
     int limit = m_isSpecialColors ? simulation.getSpecialColors().size() : COLORS_COUNT;
-    for (int i = 0; i < limit; i++) {
+    for (int i = 0; i < MAX_COLORS; i++) {
       bool isVisible = i < limit;
       CCMenuItemSpriteExtra *btn = colorButtons[i];
 
@@ -258,6 +280,24 @@ protected:
       std::string name = m_isSpecialColors ? formatColorName(simulation.getSpecialColorIDs().at(i)) : std::to_string(i + 1);
       labels[i]->setString(name.c_str());
     }
+  }
+
+  void updatePaletteColors() {
+    auto paletteColors = m_paletteColors->asExt<ColorChannelSprite*>();
+    auto colors = settings.getCurrentPalette().colors;
+    for (int i = 0; i < MAX_COLORS; i++) {
+      if ( i < colors.size()) {
+        utils.applyColorToSprite(paletteColors[i], colors.at(i));
+      }
+    }
+  }
+
+  void updateResetControls() {
+    bool isSetup = simulation.isColorSetup(selectedColorID);
+    m_reset->setVisible(isSetup);
+    m_reset->setEnabled(isSetup);
+    m_resetAll->setVisible(simulation.getModifiedColors() > 0);
+    m_resetAll->setEnabled(simulation.getModifiedColors() > 0);
   }
 
   void onColorSetup(CCObject* sender) {
@@ -312,12 +352,113 @@ protected:
     Popup::onClose(sender);
   }
 
+  void handleReset(int colorID) {
+    auto colorSetups = m_colorSetups->asExt<ColorChannelSprite *>();
+    updateResetControls();
+
+    for (ColorChannelSprite *setup : colorSetups) {
+      if (setup->getTag() == colorID) {
+        setup->removeFromParent();
+        m_colorSetups->removeObject(setup);
+        m_setups->m_contentLayer->updateLayout();
+        break;
+      }
+    }
+  }
+
+  void handleResetAll() {
+    auto colorSetups = m_colorSetups->asExt<ColorChannelSprite *>();
+    updateResetControls();
+
+    for (ColorChannelSprite *setup : colorSetups) {
+      setup->removeFromParent();
+    }
+
+    m_colorSetups->removeAllObjects();
+    m_setups->m_contentLayer->updateLayout();
+  }
+
+  void initColorsSetup() {
+    int count = 0;
+    auto colors = settings.getCurrentPalette().colors;
+    float rowHeight = 110.f / MAX_COLORS;
+
+    for (int i = 0; i < MAX_COLORS; i++) {
+        CCNode* setup = CCNode::create();
+        setup->setContentSize({ cropWidth - 30.f, rowHeight });
+        setup->setLayout(
+            RowLayout::create()
+            ->setAxisAlignment(AxisAlignment::Start)
+            ->setCrossAxisAlignment(AxisAlignment::End)
+            ->setAutoScale(false));
+
+        ccColor3B indexColor = i < colors.size()
+            ? utils.hexToColor(colors.at(i).erase(0, 1)) : ccWHITE;
+
+        ColorChannelSprite* colorSpr = ColorChannelSprite::create();
+        colorSpr->setColor(indexColor);
+        colorSpr->setScale(0.5f);
+        m_paletteColors->addObject(colorSpr);
+
+        CCLabelBMFont* label = CCLabelBMFont::create(
+            std::to_string(i + 1).c_str(), SpriteBuilder::goldFontName);
+        label->setScale(0.6f);
+
+        CCSprite* ArrowSprite = SpriteBuilder::createArrow(ArrowSprite::Green, true, 0.4f);
+        colorSpr->addChildAtPosition(label, Anchor::Center);
+        setup->addChild(colorSpr);
+        setup->addChild(ArrowSprite);
+
+        bool hasColors = false;
+        for (auto& [colorID, color] : simulation.getColorsByIndex(i)) {
+            if (count > 14) {
+                CCLabelBMFont* moreLabel = CCLabelBMFont::create(
+                    fmt::format("+{}", simulation.getColorsByIndex(i).size() - 16).c_str(),
+                    SpriteBuilder::goldFontName);
+                moreLabel->setScale(0.5f);
+                moreLabel->setTag(-10);
+                setup->addChildAtPosition(moreLabel, Anchor::Center);
+
+                //when resetting all colors, we need to remove this label as well
+                m_colorSetups->addObject(moreLabel);
+                break;
+            }
+
+            ColorChannelSprite* colorChannel = ColorChannelSprite::create();
+            colorChannel->setColor(color);
+            colorChannel->setScale(0.5f);
+            colorChannel->setTag(colorID);
+
+            CCLabelBMFont* channelLabel = CCLabelBMFont::create(
+                formatColorName(colorID).c_str(), SpriteBuilder::bigFontName);
+            channelLabel->setScale(0.5f);
+            colorChannel->addChildAtPosition(channelLabel, Anchor::Center);
+            setup->addChild(colorChannel);
+            m_colorSetups->addObject(colorChannel);
+            hasColors = true;
+            count++;
+        }
+        count = 0;
+        setup->updateLayout();
+
+        if (hasColors) {
+            m_setups->m_contentLayer->addChild(setup);
+        }
+    }
+
+    int visibleRows = m_setups->m_contentLayer->getChildrenCount();
+    float totalHeight = std::max(120.f, (float)visibleRows * rowHeight + 4.f);
+    m_setups->m_contentLayer->setContentSize({ cropWidth - 30.f, totalHeight });
+    m_setups->m_contentLayer->updateLayout();
+    m_setups->moveToTop();
+}
+
   std::string formatColorName(int colorID) {
     switch (colorID) {
     case 1000: return "BG";
     case 1001: return "G";
     case 1009: return "G2";
-    case 1002: return "LINE";
+    case 1002: return "L";
     case 1013: return "MG";
     case 1014: return "MG2";
     default:
