@@ -62,6 +62,7 @@ std::string SettingsManager::setPreset(bool next)
         : (index + m_presets.size() - 1) % m_presets.size();
 
     m_request.preset = m_presets.at(index);
+    updateAdjacency();
     return m_request.preset;
 }
 
@@ -71,12 +72,8 @@ void SettingsManager::setMaxColors(int numColors)
     if (numColors > 12) numColors = 12;
 
     m_request.num_colors = numColors;
-
-    m_request.adjacency.clear();
-    for (int i = 0; i < numColors * numColors; i++) {
-        m_request.adjacency.push_back("0");
-    }
-
+    resizeAdjacency(numColors);
+    updateAdjacency();
 
     auto& palette = m_request.palette;
     if (palette.size() < numColors) {
@@ -192,7 +189,138 @@ void SettingsManager::clearLoaded()
 
 void SettingsManager::resetSettings() 
 {
+    m_isGradientActive = false;
     m_request = m_defaultRequest;
+}
+
+int SettingsManager::getPresetBase(const std::string &preset) {
+  if (preset == "default") return 10;
+  if (preset == "high-contrast") return 15;
+  if (preset == "bright-light") return 6;
+  if (preset == "pastel") return 6;
+  if (preset == "vibrant") return 10;
+  if (preset == "dark") return 15;
+  if (preset == "hyper-color") return 10;
+  return 10;
+}
+
+void SettingsManager::resizeAdjacency(int newSize) 
+{
+    m_request.adjacency.assign(newSize * newSize, 0);
+}
+
+void SettingsManager::setAdjacency(int i, int j, int value) 
+{
+    if (i < 0 || i >= m_request.num_colors) return;
+    if (j < 0 || j >= m_request.num_colors) return;
+
+    auto& adjacency = m_request.adjacency;
+    adjacency[i * m_request.num_colors + j] = value;
+    adjacency[j * m_request.num_colors + i] = value;
+}
+
+int SettingsManager::getAdjacency(int i, int j) 
+{
+    if (i < 0 || i >= m_request.num_colors) return 0;
+    if (j < 0 || j >= m_request.num_colors) return 0;
+
+    auto& adjacency = m_request.adjacency;
+    return adjacency[i * m_request.num_colors + j];
+}
+
+void SettingsManager::gradient() 
+{
+    int base = getPresetBase(m_request.preset);
+    int size = m_request.num_colors;
+    auto &matrix = m_request.adjacency;
+
+    for (int i = 0; i < size; i++) {
+      for (int j = 0; j < size; j++) {
+        if (i == j) {
+          matrix[i * size + j] = 0;
+        } else {
+          int value = base * std::abs(i - j);
+          matrix[i * size + j] = std::min(value, 100);
+        }
+      }
+    }
+}
+
+const BaseTable &SettingsManager::getBaseTable(const std::string &preset) 
+{
+  if (preset == "high-contrast") return high_contrast;
+  if (preset == "bright-light") return t_soft;
+  if (preset == "pastel") return t_soft;
+  if (preset == "dark") return t_dark;
+  return t_default;
+}
+
+int SettingsManager::detailContrast(int roleIndex, const std::string &preset) {
+  // [BG, GROUND, PRIMARY, SECONDARY, ACCENT1, ACCENT2]
+  const int base[6] = {40, 25, 20, 15, 35, 30};
+  const int high_contrast[6] = {55, 35, 30, 20, 50, 45};
+  const int soft[6] = {25, 15, 12, 10, 22, 18};
+  const int dark[6] = {50, 30, 20, 15, 55, 50};
+
+  const int *table = base;
+  if (preset == "high-contrast") table = high_contrast;
+  else if (preset == "bright-light" || preset == "pastel") table = soft;
+  else if (preset == "dark") table = dark;
+
+  if (roleIndex < 6) return table[roleIndex];
+  return 10; // DETAIL vs DETAIL: bajo contraste entre sí
+}
+
+void SettingsManager::palette()
+{
+    int size = m_request.num_colors;
+    auto& matrix = m_request.adjacency;
+    const std::string& preset = m_request.preset;
+
+    const auto& table = getBaseTable(preset);
+
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            if (i == j) {
+                matrix[i * size + j] = 0;
+                continue;
+            }
+
+            int value = 0;
+
+            if (i < 6 && j < 6) {
+                // Ambos son roles principales: usar tabla directamente
+                value = table.values[i][j];
+            }
+            else if (i < 6) {
+                // j es DETAIL, i es rol principal
+                value = detailContrast(i, preset);
+            }
+            else if (j < 6) {
+                // i es DETAIL, j es rol principal
+                value = detailContrast(j, preset);
+            }
+            else {
+                // Ambos son DETAIL: bajo contraste entre sí
+                value = 10;
+            }
+
+            matrix[i * size + j] = std::min(value, 100);
+        }
+    }
+}
+
+bool SettingsManager::isGradientActive() {
+    return m_isGradientActive;
+}
+
+void SettingsManager::toggleGradient() {
+    m_isGradientActive = !m_isGradientActive;
+}
+
+void SettingsManager::updateAdjacency() {
+    if (m_isGradientActive) gradient();
+    else palette();
 }
 
 const RequestBody &SettingsManager::getRequest() const { return m_request; }

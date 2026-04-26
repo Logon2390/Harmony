@@ -3,6 +3,7 @@
 #include "../managers/SettingsManager.hpp"
 #include "../network/HueMintService.hpp"
 #include "../builders/SpriteBuilder.hpp"
+#include "../ui/AdjacencyPopup.cpp"
 
 using namespace geode::prelude;
 
@@ -259,7 +260,9 @@ protected:
     }
   }
 
-  void onAdjacency(CCObject *) {}
+  void onAdjacency(CCObject *) {
+    AdjacencyPopup::create(manager.getRequest().num_colors)->show();
+  }
 
   void onResetSettings(CCObject *) {
     geode::createQuickPopup(
