@@ -160,23 +160,41 @@ protected:
   }
 
   void onColorsInfo(CCObject *) {
-    FLAlertLayer::create("Colors info", "text", "OK")->show();
+    FLAlertLayer::create(
+        "Number of Colors",
+        "Sets the number of <cy>color slots</c> available to link to "
+        "<cg>color channels</c> in the simulation.\n"
+        "By default it is limited by the <cy>largest palette</c> loaded.",
+        "OK")
+        ->show();
   }
 
   void onSpecialColorsInfo(CCObject *) {
-    FLAlertLayer::create("Default values info", "text", "OK")->show();
+    FLAlertLayer::create(
+        "Special Colors",
+        "Allows you to link <cg>level special colors</c> such as "
+        "<cy>BG</c>, <cy>Ground</c> and <cy>Line</c> "
+        "to a palette color in the simulation.",
+        "OK")
+        ->show();
   }
 
   void onCustomColorsInfo(CCObject *) {
-    FLAlertLayer::create("Custom colors info", "text", "OK")->show();
+    FLAlertLayer::create(
+        "Custom Colors",
+        "Allows you to link specific <cg>color channels</c> to a "
+        "<cy>palette color</c> in the simulation.\n"
+        "Use this to preview how your palette looks applied to "
+        "your <cg>level colors</c>.",
+        "OK")
+        ->show();
   }
 
   void onResetAllInfo(CCObject *) {
-    FLAlertLayer::create("Reset All info", "text", "OK")->show();
-  }
-
-  void onBackupsInfo(CCObject *) {
-    FLAlertLayer::create("Backups info", "text", "OK")->show();
+    FLAlertLayer::create(
+        "Reset All",
+        "Resets all <cy>color channel</c> links in the simulation.", "OK")
+        ->show();
   }
 
   CCNode *createSelectorRow(const char *title, CCNode *node, CCMenuItemSpriteExtra *infoBtn, float height) {

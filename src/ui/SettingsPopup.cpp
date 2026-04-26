@@ -291,31 +291,67 @@ protected:
   }
 
   void onModeInfo(CCObject *) {
-    FLAlertLayer::create("Mode info", "text", "OK")->show();
+    FLAlertLayer::create(
+      "Generation Mode", 
+      "<cg>Transformer (AI)</c> generates palettes that feel <cy>natural and designerly</c>.\n"
+        "<cg>Diffusion (AI)</c> follows your <cy>contrast settings</c> more precisely.\n"
+        "<cg>Random</c> generates palettes <cy>by chance</c>, picking the ones "
+        "that best match your settings.",
+      "OK")->show();
   }
 
   void onPresetInfo(CCObject *) {
-    FLAlertLayer::create("Preset info", "text", "OK")->show();
+    FLAlertLayer::create(
+      "Preset info",
+      "Presets are <cy>predefined adjacency values</c> that helps you to "
+        "generate the desired <cg>color style</c>.\n"
+        "Each preset defines different <cy>contrast relationships</c> "
+        "between the colors in your palette.", 
+      "OK")->show();
   }
 
   void onColorsInfo(CCObject *) {
-    FLAlertLayer::create("Colors info", "text", "OK")->show();
+    FLAlertLayer::create(
+      "Number of Colors", 
+      "The number of colors in the generated <cy>palette</c>.\n"
+        "You can generate between <cg>2</c> and <cg>12</c> colors.",
+      "OK")->show();
   }
 
   void onTemperatureInfo(CCObject *) {
-    FLAlertLayer::create("Temperature info", "text", "OK")->show();
+    FLAlertLayer::create(
+      "Creativity", 
+      "Controls how <cy>creative</c> the model is when generating palettes.\n"
+        "<cg>Low</c> values return the most <cy>statistically common</c> color combinations.\n"
+        "<cr>High</c> values allow more <cy>diversity</c> but may ignore some contrast settings.\n"
+        "The <cg>default</c> value of <cy>1.2</c> is recommended for most cases.", 
+      "OK")->show();
   }
 
   void onResultsInfo(CCObject *) {
-    FLAlertLayer::create("Results info", "text", "OK")->show();
+    FLAlertLayer::create(
+      "Number of Results", 
+      "How many <cy>palettes</c> the AI generates per request.\n"
+        "<cg>Transformer</c> mode supports up to <cy>50</c> results.\n"
+        "<cg>Diffusion</c> mode supports up to <cy>5</c> results.\n"
+        "More results means more <cy>options</c> to choose from.", 
+      "OK")->show();
   }
 
   void onAdjacencyInfo(CCObject *) {
-    FLAlertLayer::create("Adjacency info", "text", "OK")->show();
+    FLAlertLayer::create(
+      "Adjacency Matrix", 
+      "Defines the desired <cy>contrast</c> between each pair of colors.\n"
+      "Values go from <cg>0</c> (any contrast) to <cr>100</c> (black/white).\n"
+      "<cy>1</c> = no contrast · <cy>50</c> = medium · <cy>100</c> = maximum.",
+      "OK")->show();
   }
 
   void onResetInfo(CCObject *) {
-    FLAlertLayer::create("Reset info", "text", "OK")->show();
+    FLAlertLayer::create(
+      "Reset Settings", 
+      "Resets all settings back to their <cy>default values</c>.", 
+      "OK")->show();
   }
 
   CCNode *createSelectorRow(const char *title, CCNode *node, CCMenuItemSpriteExtra* infoBtn, float height) {

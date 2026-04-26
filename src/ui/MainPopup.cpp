@@ -70,8 +70,8 @@ protected:
         CCSprite::createWithSpriteFrameName(SpriteBuilder::hideSprName),
         CircleBaseColor::Green, CircleBaseSize::Tiny);
 
-    auto infoSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::helpBtnSprName);
-    infoSpr->setScale(0.7f);
+    //auto infoSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::infoBtnName);
+    //infoSpr->setScale(0.55f);
 
     auto settingsSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::optionsBtnSprName);
     settingsSpr->setScale(0.55f);
@@ -81,7 +81,7 @@ protected:
       CCMenuItemSpriteExtra::create(folderSpr, this,menu_selector(MainPopup::onSave)),
       CCMenuItemSpriteExtra::create(resetSpr, this, menu_selector(MainPopup::onReset)),
       CCMenuItemSpriteExtra::create(hideSpr, this, menu_selector(MainPopup::onHide)),
-      CCMenuItemSpriteExtra::create(infoSpr, this, menu_selector(MainPopup::onInfo)),
+      //CCMenuItemSpriteExtra::create(infoSpr, this, menu_selector(MainPopup::onInfo)),
       nullptr);
 
     RowLayout* mainLayout = RowLayout::create();
@@ -485,12 +485,33 @@ protected:
   }
 
   void onSimulationInfo(CCObject *) {
-    FLAlertLayer::create(
+    geode::MDPopup::create(
         "Simulation Mode",
-        "In this mode, you can test how your palette would look in different types of color blindness and lighting conditions. This is a work in progress feature, so expect some quirks here and there.",
-        "OK")
-        ->show();
-  }
+        "Test how a generated **palette** looks in your level without "
+        "manually editing every color channel.\n\n"
+        "In **Settings**, link your **color channels** to palette slots. "
+        "Then toggle the simulation with the **play/stop** button.\n\n"
+        "When the simulation starts, a **backup** of all your used level "
+        "colors is created. Linked channels are then replaced with the "
+        "**palette colors**. During the simulation you can freely modify "
+        "**opacity**, **HSV** and other color settings to experiment "
+        "in real time. When you stop, all colors are **restored** to their "
+        "original state, like **nothing happened**.\n\n"
+        "You can also start a simulation **without linking** any color channel. "
+        "This will still create a backup of all your colors, letting you freely "
+        "experiment with your level and then restore everything back "
+        "if you didn't like the changes.\n\n"
+        "**Modified Colors** — how many channels are currently "
+        "replaced by palette colors.\n\n"
+        "**Saved Colors** — how many channels are backed up and will be "
+        "restored on stop. This includes linked channels **and** any other "
+        "channel you modified during the simulation, even if they are not "
+        "linked to a palette slot.\n\n"
+        "You can also **browse palettes** while the simulation is active "
+        "to apply the changes to the new palette on the fly.",
+        "OK"
+    )->show();
+}
 
   void updateColorSprites(std::vector<std::string> colors) {
     CCArrayExt<CCMenuItemSpriteExtra*> colorButtons = m_colorButtons->asExt();
