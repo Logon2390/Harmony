@@ -8,6 +8,7 @@ class $modify(MyGJColorSetupLayer, GJColorSetupLayer) {
 
     struct Fields {
         SimulationManager& manager = SimulationManager::get();
+        bool modified = false;
     };
 
     void onColor(CCObject* sender) {
@@ -18,6 +19,7 @@ class $modify(MyGJColorSetupLayer, GJColorSetupLayer) {
 
         SimulationSetupPopup* popup = SimulationSetupPopup::create(colorID);
         popup->onColorSelect = [this, btn, colorID]() {
+            m_fields->modified = true;
             GJColorSetupLayer::showPage(m_page);
         };
         popup->show();
@@ -25,6 +27,10 @@ class $modify(MyGJColorSetupLayer, GJColorSetupLayer) {
 
     void onClose(CCObject* sender) {
         m_fields->manager.m_isSetupStage = false;
+        if (m_fields->manager.isActive() && m_fields->modified) {
+            m_fields->manager.replace();
+            Notification::create("Simulation updated", NotificationIcon::Info)->show();
+        }
         GJColorSetupLayer::onClose(sender);
     }
 
