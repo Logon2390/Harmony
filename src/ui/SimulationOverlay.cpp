@@ -72,7 +72,7 @@ protected:
     m_label->setAnchorPoint({ 0.f, 0.5f });
     this->addChildAtPosition(m_label, Anchor::Left, ccp(5.f, 0.f));
 
-    auto shuffleSpr = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName("icon.png"_spr), EditorBaseColor::LightBlue);
+    auto shuffleSpr = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName("shuffle.png"_spr), EditorBaseColor::LightBlue);
     shuffleSpr->setScale(0.35f);
 
     auto visibilitySpr = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName(SpriteBuilder::hideSprName), EditorBaseColor::DarkGray);

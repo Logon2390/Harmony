@@ -203,7 +203,7 @@ private:
     const RequestBody m_defaultRequest = {
         .mode = "transformer",
         .num_colors = 4,
-        .temperature = 1.0f,
+        .temperature = 1.2f,
         .num_results = 10,
         .preset = "default",
         .adjacency = {0, 30, 90, 0, 30, 0, 70, 50, 90, 70, 0, 0, 0, 50, 0, 0},

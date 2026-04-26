@@ -331,7 +331,7 @@ protected:
   void onResultsInfo(CCObject *) {
     FLAlertLayer::create(
       "Number of Results", 
-      "How many <cy>palettes</c> the AI generates per request.\n"
+      "How many <cy>palettes</c> the service generates per request.\n"
         "<cg>Transformer</c> mode supports up to <cy>50</c> results.\n"
         "<cg>Diffusion</c> mode supports up to <cy>5</c> results.\n"
         "More results means more <cy>options</c> to choose from.", 

@@ -92,7 +92,7 @@ protected:
       ->setAutoScale(false);
 
     ColumnLayout* optionsLayout = ColumnLayout::create();
-    optionsLayout->setGap(1.f)
+    optionsLayout->setGap(2.f)
       ->setAxisAlignment(AxisAlignment::Even)
       ->setCrossAxisLineAlignment(AxisAlignment::Center)
       ->setCrossAxisOverflow(false)
@@ -144,7 +144,11 @@ protected:
       infoBtn->setID("info");
       infoBtn->m_scaleMultiplier = 1.1f;
 
-      CCSprite* swapSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::resetBtnSprName);
+      CCSprite* swapSpr = CCSprite::createWithSpriteFrameName("edit_eChangeBG_001.png");
+      CCRect rect = swapSpr->getTextureRect();
+      CCRect newRect = {rect.origin.x, rect.origin.y, rect.size.width, rect.size.height - 10.f};
+      swapSpr->setTextureRect(newRect, true, newRect.size);
+
       CCMenuItemSpriteExtra* swapBtn = CCMenuItemSpriteExtra::create(swapSpr, this, menu_selector(MainPopup::onSwapColorChannel));
       swapBtn->setID("swap");
       swapBtn->m_scaleMultiplier = 1.1f;
@@ -154,7 +158,7 @@ protected:
       colorMenu->setTag(i);
       colorMenu->setScale(0.6f);
       colorMenu->setZOrder(3);
-      colorMenu->setContentSize(ccp(20.f, 60.f));
+      colorMenu->setContentSize(ccp(20.f, 70.f));
       colorMenu->setLayout(optionsLayout);
       colorMenu->addChild(lockBtn);
       colorMenu->addChild(infoBtn);
@@ -487,27 +491,27 @@ protected:
   void onSimulationInfo(CCObject *) {
     geode::MDPopup::create(
         "Simulation Mode",
-        "Test how a generated **palette** looks in your level without "
+        "Test how a generated <cy>palette</c> looks in your level without "
         "manually editing every color channel.\n\n"
-        "In **Settings**, link your **color channels** to palette slots. "
-        "Then toggle the simulation with the **play/stop** button.\n\n"
-        "When the simulation starts, a **backup** of all your used level "
+        "In <cg>Settings</c>, link your <cy>color channels</c> to palette slots. "
+        "Then toggle the simulation with the <cg>play/stop</c> button.\n\n"
+        "When the simulation starts, a <cy>backup</c> of all your used level "
         "colors is created. Linked channels are then replaced with the "
-        "**palette colors**. During the simulation you can freely modify "
-        "**opacity**, **HSV** and other color settings to experiment "
-        "in real time. When you stop, all colors are **restored** to their "
-        "original state, like **nothing happened**.\n\n"
-        "You can also start a simulation **without linking** any color channel. "
+        "<cy>palette colors</c>. During the simulation you can freely modify "
+        "<cg>opacity</c>, <cg>HSV</c> and other color settings to experiment "
+        "in real time. When you stop, all colors are <cy>restored</c> to their "
+        "original state, like <cg>nothing happened</c>.\n\n"
+        "You can also start a simulation <cy>without linking</c> any color channel. "
         "This will still create a backup of all your colors, letting you freely "
         "experiment with your level and then restore everything back "
         "if you didn't like the changes.\n\n"
-        "**Modified Colors** — how many channels are currently "
-        "replaced by palette colors.\n\n"
-        "**Saved Colors** — how many channels are backed up and will be "
-        "restored on stop. This includes linked channels **and** any other "
+        "<cg>Modified Colors</c> — how many channels are currently "
+        "replaced by palette colors.\n"
+        "<cy>Saved Colors</c> — how many channels are backed up and will be "
+        "restored on stop. This includes linked channels <cy>and</c> any other "
         "channel you modified during the simulation, even if they are not "
         "linked to a palette slot.\n\n"
-        "You can also **browse palettes** while the simulation is active "
+        "You can also <cg>browse palettes</c> while the simulation is active "
         "to apply the changes to the new palette on the fly.",
         "OK"
     )->show();
