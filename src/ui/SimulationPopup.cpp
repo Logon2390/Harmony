@@ -34,6 +34,9 @@ protected:
     this->setTitle("Simulation Settings");
     m_infoMenu = static_cast<CCMenu*>(this->m_closeBtn->getParent());
 
+    //sync m_colors
+    simulation.setColors(ColorsCount);
+
     RowLayout *layout = RowLayout::create();
     layout->setGap(0.5f);
     layout->setAxisAlignment(AxisAlignment::Between);
@@ -97,6 +100,7 @@ protected:
       m_colors->setString(geode::utils::numToString(ColorsCount));
     } else {
       ColorsCount = simulation.getMaxColorCount();
+      simulation.setColors(ColorsCount);
       m_colors->setString(geode::utils::numToString(ColorsCount));
     }
   }
@@ -108,6 +112,7 @@ protected:
       m_colors->setString(geode::utils::numToString(ColorsCount));
     } else {
       ColorsCount = SettingsManager::MIN_COLORS;
+      simulation.setColors(ColorsCount);
       m_colors->setString(geode::utils::numToString(ColorsCount));
     }
   }
