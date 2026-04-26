@@ -353,7 +353,7 @@ protected:
     m_generate->addChildAtPosition(m_spinner, Anchor::Center);
     m_generate->setEnabled(false);
 
-    service.request([weak = geode::WeakRef(this)](Palette result) {
+    bool request = service.request([weak = geode::WeakRef(this), request](Palette result) {
       if (auto self = weak.lock()) {
         self->m_spinner->removeFromParent();
         self->m_spinner = nullptr;
@@ -367,7 +367,12 @@ protected:
           self->updateUI();
           self->onPalettePoolChanged();
         } else {
-          FLAlertLayer::create("Error", "Failed to generate palette. Please try again.", "OK")->show();
+          std::string message =
+              request ? "Failed to generate palette. Please try again."
+                      : fmt::format("Rate limit exceeded. Please wait {} seconds before making another request.",
+                        self->service.getSecondsUntilNextSlot());
+          FLAlertLayer::create("Error", message, "OK")->show();
+          return;
         }
       }
     });

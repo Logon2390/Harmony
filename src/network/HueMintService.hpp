@@ -20,9 +20,16 @@ public:
   }
   PaletteResult &getPalettePool() { return m_currentPaletteResult; }
   int getPoolSize() { return static_cast<int>(m_currentPaletteResult.palettes.size()); } 
-  void request(std::function<void(Palette)> onComplete);
+  bool request(std::function<void(Palette)> onComplete);
+  int getRemainingRequests();
+  int getSecondsUntilNextSlot();
 
 private:
+  static constexpr int MAX_REQUESTS = 15;
+  static constexpr int WINDOW = 60;
+  std::deque<geode::utils::Timer<>> m_requestTimers;
+  void pruneExpiredTimers();
+  bool isRateLimited();
   PaletteResult m_currentPaletteResult;
   PaletteResult mapPaletteResult(ResponseBody response);
   async::TaskHolder<web::WebResponse> m_listener;
