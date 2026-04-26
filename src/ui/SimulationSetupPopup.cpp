@@ -246,9 +246,9 @@ protected:
     NineSlice *colorSpr;
     std::string hex;
     for (size_t i = 0; i < MAX_COLORS; i++) {
-      colorSpr = static_cast<NineSlice *>(colorButtons[i]->getNormalImage());
       hex = i < colors.size() ? colors.at(i) : "#FFFFFF";
-      utils.applyColorToSprite(colorSpr, hex);
+      colorSpr = static_cast<NineSlice *>(colorButtons[i]->getNormalImage());
+      colorSpr->setColor(cc3bFromHexString(hex).unwrapOr(ccColor3B{ 255, 255, 255 }));
     }
   }
 
@@ -287,7 +287,7 @@ protected:
     auto colors = settings.getCurrentPalette().colors;
     for (int i = 0; i < MAX_COLORS; i++) {
       if ( i < colors.size()) {
-        utils.applyColorToSprite(paletteColors[i], colors.at(i));
+        paletteColors[i]->setColor(cc3bFromHexString(colors.at(i)).unwrapOr(ccColor3B{ 255, 255, 255 }));
       }
     }
   }
@@ -393,7 +393,7 @@ protected:
             ->setAutoScale(false));
 
         ccColor3B indexColor = i < colors.size()
-            ? utils.hexToColor(colors.at(i).erase(0, 1)) : ccWHITE;
+            ? cc3bFromHexString(colors.at(i)).unwrapOr(ccColor3B{ 255, 255, 255 }) : ccWHITE;
 
         ColorChannelSprite* colorSpr = ColorChannelSprite::create();
         colorSpr->setColor(indexColor);

@@ -1,15 +1,5 @@
 #include "ColorUtils.hpp"
 
-std::string ColorUtils::colorToHex(ccColor3B color = {255, 255, 255})
-{
-    return m_colorSelectPopup->colorToHex(color);
-}
-
-ccColor3B ColorUtils::hexToColor(const std::string &hex)
-{
-    return m_colorSelectPopup->hexToColor(hex);
-}
-
 std::string ColorUtils::hsvToHex(HSV hsv)
 {
     RGBA rgba = CCControlUtils::RGBfromHSV(hsv);
@@ -30,20 +20,4 @@ void ColorUtils::copyColor(ccColor3B color, CCObject *sender)
     m_colorSelectPopup->onCopy(sender);
 
     Notification::create("Color copied!", NotificationIcon::Success)->show();
-}
-
-void ColorUtils::applyColorToSprite(NineSlice *sprite, std::string hex) 
-{
-    if (!hex.empty() && hex[0] == '#') hex.erase(0, 1);
-    if (hex.length() != 6) hex = "FFFFFF";
-
-    sprite->setColor(hexToColor(hex));
-}
-
-void ColorUtils::applyColorToSprite(CCSprite *sprite, std::string hex) 
-{
-    if (!hex.empty() && hex[0] == '#') hex.erase(0, 1);
-    if (hex.length() != 6)hex = "FFFFFF";
-    
-    sprite->setColor(hexToColor(hex));
 }

@@ -3,6 +3,7 @@
 #include "../ui/SimulationOverlay.cpp"
 #include "../managers/DataManager.hpp"
 #include "../managers/SimulationManager.hpp"
+#include "../utils/ColorUtils.hpp"
 
 using namespace geode::prelude;
 
@@ -14,6 +15,7 @@ class $modify(MyEditorUI, EditorUI) {
         SimulationManager& manager = SimulationManager::get();
         bool isPlayTesting = false;
         ~Fields() {
+            ColorUtils::get().m_colorSelectPopup = nullptr;
             manager.m_effectManager = nullptr;
             manager.m_settings = nullptr;
         }

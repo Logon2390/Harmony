@@ -173,7 +173,7 @@ protected:
 
     for (int i = 0; i < settings.MAX_COLORS; i++) {
       if (i < paletteSize) {
-        utils.applyColorToSprite(colorsSprites[i], colors[i]);
+        colorsSprites[i]->setColor(cc3bFromHexString(colors[i]).unwrapOr(ccColor3B{ 255, 255, 255 }));
         colorsSprites[i]->setVisible(true);
       } else {
         colorsSprites[i]->setVisible(false);

@@ -1,6 +1,5 @@
 #include "SimulationManager.hpp"
 #include "../network/HueMintService.hpp"
-#include "../utils/ColorUtils.hpp"
 
 SettingsManager& settings = SettingsManager::get();
 
@@ -35,7 +34,9 @@ bool SimulationManager::replace()
 
     for (auto& [colorID, colorIndex] : m_colorSettings) {
         auto colorAction = m_effectManager->getColorAction(colorID);
-        ccColor3B color = colorIndex < paletteSize ? ColorUtils::get().hexToColor(currentPalette.colors.at(colorIndex).erase(0, 1)) : ccColor3B{ 255, 255, 255 };
+        auto ccColor = cc3bFromHexString(currentPalette.colors.at(colorIndex)).unwrapOr(ccColor3B{ 255, 255, 255 });
+
+        ccColor3B color = colorIndex < paletteSize ? ccColor : ccColor3B{ 255, 255, 255 };
         colorAction->m_fromColor = color;
     }
 
@@ -119,7 +120,7 @@ std::vector<std::string> SimulationManager::getSpecialColors()
         auto colorAction = m_effectManager->getColorAction(colorID);
         if (colorAction) {
             ccColor3B color = colorAction->m_fromColor;
-            result.push_back(ColorUtils::get().colorToHex(color));
+            result.push_back(cc3bToHexString(color));
         } else {
             result.push_back("#FFFFFF");
         }

@@ -320,9 +320,8 @@ protected:
     bg->addChildAtPosition(menu, Anchor::Center);
 
     for (int i = 0; i < palette.colors.size(); ++i) {
-      auto hex = palette.colors[i].erase(0, 1); // remove # from hex string
       auto color = ColorChannelSprite::create();
-      color->setColor(ColorUtils::get().hexToColor(hex));
+      color->setColor(cc3bFromHexString(palette.colors[i]).unwrapOr(ccColor3B{ 255, 255, 255 }));
       color->setScale(0.5f);
 
       auto colorBtn = CCMenuItemSpriteExtra::create(color, this, menu_selector(SavedPopup::onColorSelect));

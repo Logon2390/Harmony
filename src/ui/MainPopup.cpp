@@ -334,7 +334,7 @@ protected:
     auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
     auto colorSpr = static_cast<ColorChannelSprite *>(item->getNormalImage());
 
-    if (manager.isColorLocked(utils.colorToHex(colorSpr->getColor()))) {
+    if (manager.isColorLocked(cc3bToHexString(colorSpr->getColor()))) {
       FLAlertLayer::create("This color is locked", "<cb>Unlock</c> this color to edit it.", "OK")->show();
       return;
     }
@@ -435,7 +435,7 @@ protected:
     int index = menu->getTag();
 
     NineSlice * colorSpr = static_cast<NineSlice *>(m_colorButtons->asExt<CCMenuItemSpriteExtra*>()[index]->getNormalImage());
-    manager.toggleColorLock(index, utils.colorToHex(colorSpr->getColor()));
+    manager.toggleColorLock(index, cc3bToHexString(colorSpr->getColor()));
     updateLockButton(index, manager.isColorLocked(index));
   }
 
@@ -521,7 +521,7 @@ protected:
 
       if (i < colors.size()) {
         NineSlice *colorSpr = static_cast<NineSlice *>(colorButtons[i]->getNormalImage());
-        utils.applyColorToSprite(colorSpr, colors.at(i));
+        colorSpr->setColor(cc3bFromHexString(colors.at(i)).unwrapOr(ccColor3B{ 255, 255, 255 }));
       }
     }
 
