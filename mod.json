@@ -10,7 +10,7 @@
 	"name": "Harmony",
 	"version": "v1.0.0",
 	"developer": "Logon",
-	"description": "",
+	"description": "Color palette generator for Geometry Dash.",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0"
 	},
