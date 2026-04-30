@@ -3,12 +3,11 @@
 	"gd": {
 		"win": "2.2081",
 		"android": "2.2081",
-		"ios": "2.2081",
 		"mac": "2.2081"
 	},
 	"id": "logon.harmony",
 	"name": "Harmony",
-	"version": "v1.0.0",
+	"version": "v1.0.1",
 	"developer": "Logon",
 	"description": "Color palette generator for Geometry Dash.",
 	"dependencies": {
