@@ -1,6 +1,6 @@
 #include <Geode/modify/GJColorSetupLayer.hpp>
 #include "../managers/SimulationManager.hpp"
-#include "../ui/SimulationSetupPopup.cpp"
+#include "../ui/SimulationSetupPopup.hpp"
 
 using namespace geode::prelude;
 

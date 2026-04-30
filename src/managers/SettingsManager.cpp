@@ -268,7 +268,7 @@ int SettingsManager::detailContrast(int roleIndex, const std::string &preset) {
   else if (preset == "dark") table = dark;
 
   if (roleIndex < 6) return table[roleIndex];
-  return 10; // DETAIL vs DETAIL: bajo contraste entre sí
+  return 10;
 }
 
 void SettingsManager::palette()
@@ -289,19 +289,15 @@ void SettingsManager::palette()
             int value = 0;
 
             if (i < 6 && j < 6) {
-                // Ambos son roles principales: usar tabla directamente
                 value = table.values[i][j];
             }
             else if (i < 6) {
-                // j es DETAIL, i es rol principal
                 value = detailContrast(i, preset);
             }
             else if (j < 6) {
-                // i es DETAIL, j es rol principal
                 value = detailContrast(j, preset);
             }
             else {
-                // Ambos son DETAIL: bajo contraste entre sí
                 value = 10;
             }
 

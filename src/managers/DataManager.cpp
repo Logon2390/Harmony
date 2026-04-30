@@ -92,9 +92,7 @@ std::vector<SavedPalette> DataManager::getPaletteByName(const std::string& name)
     auto& palettes = load();
     std::vector<SavedPalette> result;
 
-    std::string nameLower = name;
-    std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
-
+    std::string nameLower = utils::string::toLower(name);
     std::copy_if(palettes.begin(), palettes.end(), std::back_inserter(result),
         [&nameLower](const SavedPalette& p) {
             std::string paletteLower = p.name;

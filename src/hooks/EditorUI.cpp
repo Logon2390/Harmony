@@ -1,6 +1,6 @@
 #include <Geode/modify/EditorUI.hpp>
-#include "../ui/MainPopup.cpp"
-#include "../ui/SimulationOverlay.cpp"
+#include "../ui/MainPopup.hpp"
+#include "../ui/SimulationOverlay.hpp"
 #include "../managers/DataManager.hpp"
 #include "../managers/SimulationManager.hpp"
 #include "../utils/ColorUtils.hpp"
