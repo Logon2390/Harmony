@@ -1,6 +1,6 @@
 # <c-FF6B6B>H</c><c-FF7F50>a</c><c-FFD93D>r</c><c-6BCB77>m</c><c-4D96FF>o</c><c-9B72CF>n</c><c-FF6B6B>y</c>
 
-<cy>Harmony</c> is a powerful tool for generating and managing <cy>color palettes</c> directly in the level editor, powered by [HueMint.com](https://huemint.com).
+<cy>Harmony</c> is a powerful tool for generating and managing <cy>color palettes</c> directly in the level editor, powered by [Huemint.com](https://huemint.com).
 
 Generate palettes of up to <cy>12 colors</c> and preview them in your level in <cg>real time</c>.
 
@@ -30,9 +30,9 @@ When you stop, all colors are <cg>fully restored</c> like nothing happened.
 
 ---
 
-## Powered by HueMint
+## Powered by Huemint
 
-The palette generation in this mod is powered by [HueMint.com](https://huemint.com), a <cy>machine learning</c> platform for generating color palettes for graphic design. This mod uses its <cy>public API</c> to generate palettes based on your settings.
+The palette generation in this mod is powered by [Huemint.com](https://huemint.com), a <cy>machine learning</c> platform for generating color palettes for graphic design. This mod uses its <cy>public API</c> to generate palettes based on your settings.
 
 Some advanced settings — especially the <cy>adjacency matrix</c> — may require some background knowledge to get the most out of them. You can learn more about how palette generation works here: [huemint.com/about](https://huemint.com/about/)
 
