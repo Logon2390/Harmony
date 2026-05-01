@@ -7,6 +7,7 @@ using namespace geode::prelude;
 
 class SimulationPopup : public Popup {
 public:
+    std::function<void()> onSettingsChanged = []() {};
     static SimulationPopup* create();
 
 protected:

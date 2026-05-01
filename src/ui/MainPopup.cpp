@@ -273,8 +273,7 @@ void MainPopup::onSave(CCObject *) {
   popup->onLoadPalette = [this]() {
     this->m_isLoaded = service.getPoolSize() > 0;
     this->updateUI();
-    if (simulation.isActive())
-      this->onPalettePoolChanged();
+    if (simulation.isActive()) this->onPalettePoolChanged();
     if (this->service.getPoolSize() <= 1) {
       updateColorSprites(manager.getCurrentPalette().colors);
     }
@@ -344,19 +343,18 @@ void MainPopup::onGeneratePalette(CCObject *) {
 void MainPopup::onSavePalette(CCObject *sender) {
   SavedPalette &palette = manager.getCurrentPalette();
   if (manager.isLoaded(palette.id)) {
+    std::string newName = m_nameInput->getString();
     geode::createQuickPopup(
-        "Update palette", "Do you want to update this palette?", "Copy",
-        "Update", [this, palette](auto, bool btn2) {
+        "Update palette", "Do you want to update this palette?", 
+        "Cancel", "Update", [this, newName](auto, bool btn2) {
           if (btn2) {
-            manager.setPaletteName(m_nameInput->getString());
-            data.update(palette);
+            manager.setPaletteName(newName);
+            data.update(manager.getCurrentPalette());
             Notification::create("Palette updated", NotificationIcon::Success)->show();
-          } else {
-            data.create(manager.getCurrentPalette(), m_nameInput->getString());
-            Notification::create("Palette saved as new", NotificationIcon::Success)->show();
           }
-        });
-    return;
+        }
+      );
+      return;
   }
 
   data.create(manager.getCurrentPalette(), m_nameInput->getString());
@@ -440,7 +438,13 @@ void MainPopup::onSimulationToggle(CCObject *) {
   updateSimulationLabels();
 }
 
-void MainPopup::onSimulationSettings(CCObject *) { SimulationPopup::create()->show(); }
+void MainPopup::onSimulationSettings(CCObject *) { 
+  auto popup = SimulationPopup::create();
+  popup->onSettingsChanged = [this]() {
+    this->updateUI();
+  };
+  popup->show(); 
+}
 
 void MainPopup::onSimulationInfo(CCObject *) {
   geode::MDPopup::create(

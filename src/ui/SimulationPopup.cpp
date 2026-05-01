@@ -157,17 +157,19 @@ void SimulationPopup::onCustomColors(CCObject *) {
 }
 
 void SimulationPopup::onResetAll(CCObject *) {
-  geode::createQuickPopup("Reset all colors settings",
-                          "Are you sure you want to reset all colors settings?",
-                          "Cancel", "Reset", [this](auto, bool btn2) {
-                            if (btn2) {
-                              simulation.reset();
-                              Notification::create(
-                                  "All color channel setups removed",
-                                  NotificationIcon::Info)
-                                  ->show();
-                            }
-                          });
+  geode::createQuickPopup(
+    "Reset all colors settings",
+    "Are you sure you want to reset all colors settings. This will <cy>stop palette simulation if active.</c>?",
+    "Cancel", "Reset", [this](auto, bool btn2) {
+      if (btn2) {
+        simulation.reset();
+        if (simulation.isActive()) {
+          simulation.toggleSimulation();
+          onSettingsChanged();
+        } 
+        Notification::create("All color channel setups removed",NotificationIcon::Info)->show();
+      }
+    });
 }
 
 void SimulationPopup::onColorsInfo(CCObject *) {
