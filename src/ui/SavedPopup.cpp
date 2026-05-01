@@ -20,8 +20,7 @@ bool SavedPopup::init() {
   m_totalItems = m_items.size();
 
   if (m_totalItems == 0) {
-    CCLabelBMFont *label = CCLabelBMFont::create("No saved palettes!",
-                                                 SpriteBuilder::goldFontName);
+    CCLabelBMFont *label = CCLabelBMFont::create("No saved palettes!", SpriteBuilder::goldFontName);
     label->setScale(0.7f);
     m_mainLayer->addChildAtPosition(label, Anchor::Center);
     return true;
@@ -163,14 +162,20 @@ void SavedPopup::onRemove(CCObject *sender) {
 }
 
 void SavedPopup::updatePage(int page) {
-  if (page < 0 || page > (m_totalItems - 1) / m_itemsPerPage)
+  if (page < 0 || page > (m_totalItems - 1) / m_itemsPerPage) return;
+
+  //clear current items
+  m_menu->removeAllChildren();
+
+  if (m_items.empty()) {
+    CCLabelBMFont *label = CCLabelBMFont::create("No saved palettes!", SpriteBuilder::goldFontName);
+    label->setScale(0.7f);
+    m_mainLayer->addChildAtPosition(label, Anchor::Center);
     return;
-  if (m_items.empty())
-    return;
+  }
 
   m_page = page;
   m_totalItems = m_items.size();
-  m_menu->removeAllChildren();
 
   int start = page * m_itemsPerPage;
   int end = std::min(start + m_itemsPerPage, m_totalItems);
