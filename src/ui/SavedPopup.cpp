@@ -155,8 +155,15 @@ void SavedPopup::onRemove(CCObject *sender) {
       "Delete palette", "Are you sure you want to delete this palette?",
       "Cancel", "Delete", [this, paletteId](auto, bool btn2) {
         if (btn2) {
+          //removes the palette from saved data and updates the popup
           m_manager.remove(paletteId);
           updateItems();
+
+          //if the palette was loaded, unload it and update the main popup
+          if (m_settings.isLoaded(paletteId)) {
+            m_settings.removePalette(paletteId);
+            onLoadPalette();
+          }
         }
       });
 }
