@@ -394,6 +394,13 @@ void MainPopup::onLockColorChannel(CCObject *sender) {
   auto menu = static_cast<CCMenu *>(item->getParent());
   int index = menu->getTag();
 
+  if (index >= manager.getRequest().num_colors) {
+    FLAlertLayer::create(
+      "Color limit exceeded", 
+      fmt::format("This color does not meet the current limit ({}). <cg> Increase </c> the color limit to <cp>lock this color.</c>", manager.getRequest().num_colors), "OK")->show();
+    return;
+  }
+
   NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons->asExt<CCMenuItemSpriteExtra *>()[index]->getNormalImage());
   manager.toggleColorLock(index, cc3bToHexString(colorSpr->getColor()));
   updateLockButton(index, manager.isColorLocked(index));
@@ -544,11 +551,11 @@ void MainPopup::updateNavigationButtons() {
 }
 
 void MainPopup::updateLockButton(int index, bool locked) {
-  CCMenuItemSpriteExtra *color =
-      m_colorButtons->asExt<CCMenuItemSpriteExtra *>()[index];
-  CCMenuItemSpriteExtra *lockBtn = static_cast<CCMenuItemSpriteExtra *>(
-      color->getChildByIDRecursive("lock"));
+  CCMenuItemSpriteExtra *color = m_colorButtons->asExt<CCMenuItemSpriteExtra *>()[index];
+  CCMenuItemSpriteExtra *lockBtn = static_cast<CCMenuItemSpriteExtra *>(color->getChildByIDRecursive("lock"));
+  int opacity = index < SettingsManager::get().getRequest().num_colors ? 255 : 100;
 
+  lockBtn->setOpacity(opacity);
   const char *frame = locked ? SpriteBuilder::lockClosedSprName : SpriteBuilder::lockOpenSprName;
   static_cast<CCSprite *>(lockBtn->getNormalImage())->setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frame));
 }
