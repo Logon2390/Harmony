@@ -169,8 +169,13 @@ void SettingsManager::addPalette(const SavedPalette &palette)
 void SettingsManager::removePalette(const std::string &id)
 {
     auto &palettes = service.getPalettePool().palettes;
-    palettes.erase(std::remove_if(palettes.begin(), palettes.end(), [&id](const SavedPalette &p) {
-        return p.id == id; }), palettes.end());
+
+    // Loaded palettes are always stored at the end of the pool
+    const size_t start = palettes.size() - m_loadedPalettes.size();
+    auto it = std::find_if(palettes.begin() + start, palettes.end(),
+                           [&id](const SavedPalette &p) { return p.id == id; });
+
+    if (it != palettes.end()) palettes.erase(it);
     m_loadedPalettes.erase(id);
 
     if (service.getPalettePool().currentItem >= palettes.size() && !palettes.empty()) {

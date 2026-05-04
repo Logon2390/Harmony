@@ -158,12 +158,7 @@ void SavedPopup::onRemove(CCObject *sender) {
           //removes the palette from saved data and updates the popup
           m_manager.remove(paletteId);
           updateItems();
-
-          //if the palette was loaded, unload it and update the main popup
-          if (m_settings.isLoaded(paletteId)) {
-            m_settings.removePalette(paletteId);
-            onLoadPalette();
-          }
+          onLoadPalette();
         }
       });
 }

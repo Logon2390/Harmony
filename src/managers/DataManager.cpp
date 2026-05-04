@@ -1,6 +1,8 @@
 #include "DataManager.hpp"
+#include "../network/HueMintService.hpp"
+#include "../managers/SettingsManager.hpp"
 
-void DataManager::create(SavedPalette palette, const std::string &name) {
+void DataManager::create(SavedPalette& palette, const std::string &name) {
 
   auto id = random::generateUUID();
   palette.id = id;
@@ -62,6 +64,20 @@ void DataManager::remove(const std::string &id)
   if (it != palettes.end()) {
     palettes.erase(it);
     save();
+  }
+
+  //if the palette was loaded, unload it from the pool
+  if (SettingsManager::get().isLoaded(id)) {
+    SettingsManager::get().removePalette(id);
+  }
+
+  //checks if the removed palette was in the current results and removes it from there to avoid ghost palettes
+  for (auto &saved : m_savedResults) {
+    if (saved.second) {
+      if (HueMintService::get().getPalettePool().palettes.at(saved.first).id == id) {
+        m_savedResults.erase(saved.first);
+      }
+    }
   }
 }
 
