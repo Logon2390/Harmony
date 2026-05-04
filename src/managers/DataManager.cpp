@@ -6,7 +6,6 @@ void DataManager::create(SavedPalette palette, const std::string &name) {
   palette.id = id;
   palette.name = name;
   palette.isFavorite = false;
-  palette.colors = palette.colors;
 
   auto &palettes = load();
   palettes.push_back(palette);
