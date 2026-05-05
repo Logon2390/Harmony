@@ -7,10 +7,16 @@ void DataManager::create(SavedPalette& palette, const std::string &name) {
   auto id = random::generateUUID();
   palette.id = id;
   palette.name = name;
-  palette.isFavorite = false;
+
+  SavedPalette copy = palette;
+  
+  // if the palette has more colors than the current setting, trim it to avoid saving unnecessary colors
+  if (SettingsManager::get().getRequest().num_colors < palette.colors.size()) {
+    copy.colors.resize(SettingsManager::get().getRequest().num_colors);
+  }
 
   auto &palettes = load();
-  palettes.push_back(palette);
+  palettes.push_back(copy);
   save();
 }
 
