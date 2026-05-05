@@ -37,7 +37,7 @@ class $modify(MyGJColorSetupLayer, GJColorSetupLayer) {
     void updateSpriteColor(ColorChannelSprite* sprite, CCLabelBMFont* label, int id) {
         if (!m_fields->manager.m_isSetupStage) return GJColorSetupLayer::updateSpriteColor(sprite, label, id);
 
-        ccColor3B color = m_fields->manager.isColorSetup(id) ? ccColor3B{0, 255, 0} : ccColor3B{255, 255, 255};
+        ccColor3B color = m_fields->manager.isColorSetup(id) ? ccColor3B{0, 255, 0} : ccWHITE;
         label->setColor(color);
         GJColorSetupLayer::updateSpriteColor(sprite, label, id);
     }

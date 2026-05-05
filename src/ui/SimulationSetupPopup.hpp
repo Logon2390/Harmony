@@ -35,6 +35,7 @@ protected:
     const float height = 260.f;
     const float cropWidth = width - 20.f;
     bool m_isSpecialColors = false;
+    bool m_isSpecialColorsSetup = false;
     int selectedColorID = 0;
 
     bool init(int colorID, bool specialColors = false);

@@ -169,7 +169,7 @@ void SavedPopup::updatePage(int page) {
   //clear current items
   m_menu->removeAllChildren();
 
-  if (m_items.empty()) {
+  if (m_items.empty() && !m_showFavOnly) {
     CCLabelBMFont *label = CCLabelBMFont::create("No saved palettes!", SpriteBuilder::goldFontName);
     label->setScale(0.7f);
     m_mainLayer->addChildAtPosition(label, Anchor::Center);
@@ -308,7 +308,7 @@ NineSlice* SavedPopup::colorPalette(SavedPalette palette) {
 
   for (int i = 0; i < palette.colors.size(); ++i) {
     auto color = ColorChannelSprite::create();
-    color->setColor(cc3bFromHexString(palette.colors[i]).unwrapOr(ccColor3B{255, 255, 255}));
+    color->setColor(cc3bFromHexString(palette.colors[i]).unwrapOr(ccWHITE));
     color->setScale(0.5f);
 
     auto colorBtn = CCMenuItemSpriteExtra::create(color, this, menu_selector(SavedPopup::onColorSelect));

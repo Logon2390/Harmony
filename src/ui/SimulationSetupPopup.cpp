@@ -18,6 +18,7 @@ bool SimulationSetupPopup::init(int colorID, bool specialColors) {
 
   selectedColorID = colorID;
   m_isSpecialColors = specialColors;
+  m_isSpecialColorsSetup = specialColors;
   simulation.m_isSetupStage = true;
 
   m_colorButtons = CCArray::createWithCapacity(MAX_COLORS);
@@ -217,7 +218,7 @@ void SimulationSetupPopup::updateColorSprites(std::vector<std::string> colors) {
   for (size_t i = 0; i < MAX_COLORS; i++) {
     hex = i < colors.size() ? colors.at(i) : "#FFFFFF";
     colorSpr = static_cast<NineSlice *>(colorButtons[i]->getNormalImage());
-    colorSpr->setColor(cc3bFromHexString(hex).unwrapOr(ccColor3B{255, 255, 255}));
+    colorSpr->setColor(cc3bFromHexString(hex).unwrapOr(ccWHITE));
   }
 }
 
@@ -260,7 +261,7 @@ void SimulationSetupPopup::updatePaletteColors() {
   for (int i = 0; i < MAX_COLORS; i++) {
     if (i < colors.size()) {
       paletteColors[i]->setColor(
-          cc3bFromHexString(colors.at(i)).unwrapOr(ccColor3B{255, 255, 255}));
+          cc3bFromHexString(colors.at(i)).unwrapOr(ccWHITE));
     }
   }
 }
@@ -318,7 +319,13 @@ void SimulationSetupPopup::toggleSpecialColors() {
 }
 
 void SimulationSetupPopup::onClose(CCObject *sender) {
-  if (m_isSpecialColors) simulation.m_isSetupStage = false;
+  if (m_isSpecialColorsSetup) {
+    simulation.m_isSetupStage = false;
+    if (simulation.isActive()) {
+      simulation.replace();
+      Notification::create("Simulation updated", NotificationIcon::Info)->show();
+    }
+  }
   onColorSelect();
   Popup::onClose(sender);
 }
@@ -363,7 +370,7 @@ void SimulationSetupPopup::initColorsSetup() {
                          ->setAutoScale(false));
 
     ccColor3B indexColor = i < colors.size()
-            ? cc3bFromHexString(colors.at(i)).unwrapOr(ccColor3B{255, 255, 255})
+            ? cc3bFromHexString(colors.at(i)).unwrapOr(ccWHITE)
             : ccWHITE;
 
     ColorChannelSprite *colorSpr = ColorChannelSprite::create();
