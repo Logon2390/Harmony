@@ -273,7 +273,7 @@ void MainPopup::onSave(CCObject *) {
     this->m_isLoaded = service.getPoolSize() > 0;
     this->updateUI();
     if (simulation.isActive()) this->onPalettePoolChanged();
-    if (this->service.getPoolSize() <= 1) {
+    if (this->service.getPalettePool().currentItem == this->service.getPoolSize() - 1 || this->service.getPoolSize() == 0) {
       updateColorSprites(manager.getCurrentPalette().colors);
     }
   };
