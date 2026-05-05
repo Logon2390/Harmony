@@ -366,26 +366,22 @@ void MainPopup::onSavePalette(CCObject *sender) {
 }
 
 void MainPopup::onNextPalette(CCObject *sender) {
-  if (service.getPalettePool().currentItem < service.getPoolSize() - 1) {
-    updateColorSprites(manager.getNextPalette().colors);
-    updateUI();
+  updateColorSprites(manager.getNextPalette().colors);
+  updateUI();
 
-    if (simulation.isActive()) {
-      simulation.replace();
-      onPalettePoolChanged();
-    }
+  if (simulation.isActive()) {
+    simulation.replace();
+    onPalettePoolChanged();
   }
 }
 
 void MainPopup::onPrevPalette(CCObject *sender) {
-  if (service.getPalettePool().currentItem > 0) {
-    updateColorSprites(manager.getPrevPalette().colors);
-    updateUI();
+  updateColorSprites(manager.getPrevPalette().colors);
+  updateUI();
 
-    if (simulation.isActive()) {
-      simulation.replace();
-      onPalettePoolChanged();
-    }
+  if (simulation.isActive()) {
+    simulation.replace();
+    onPalettePoolChanged();
   }
 }
 
@@ -533,17 +529,9 @@ void MainPopup::updateColorButton(CCMenuItemSpriteExtra *btn, int index, int lim
 
 void MainPopup::updateNavigationButtons() {
   if (m_isLoaded) {
-    int currentIndex = service.getPalettePool().currentItem;
-    int totalItems = service.getPoolSize();
-    int prevOpacity = currentIndex > 0 ? 255 : 200;
-    int nextOpacity = currentIndex < totalItems - 1 ? 255 : 200;
-
-    m_prev->setOpacity(prevOpacity);
-    m_next->setOpacity(nextOpacity);
-    m_prev->setEnabled(currentIndex > 0);
-    m_next->setEnabled(currentIndex < totalItems - 1);
-    m_prev->setVisible(totalItems > 1);
-    m_next->setVisible(totalItems > 1);
+    bool hasMultipleItems = service.getPoolSize() > 1;
+    m_prev->setVisible(hasMultipleItems);
+    m_next->setVisible(hasMultipleItems);
   }
 
   m_navMenu->setEnabled(m_isLoaded);

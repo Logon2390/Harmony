@@ -17,26 +17,22 @@ SavedPalette &SettingsManager::getCurrentPalette() {
 
 SavedPalette SettingsManager::getNextPalette()
 {
-    int currentIndex = service.getPalettePool().currentItem;
-    int nextIndex = currentIndex + 1;
-
-    if (nextIndex >= service.getPoolSize())
-        return service.getPalettePool().palettes.at(currentIndex);
-
-    service.getPalettePool().currentItem = nextIndex;
-    return service.getPalettePool().palettes.at(nextIndex);
+    int size = service.getPoolSize();
+    if (size == 0) return defaultPalette;
+    
+    auto& pool = service.getPalettePool();
+    pool.currentItem = (pool.currentItem + 1) % size;
+    return pool.palettes.at(pool.currentItem);
 }
 
 SavedPalette SettingsManager::getPrevPalette()
 {
-    int currentIndex = service.getPalettePool().currentItem;
-    int prevIndex = currentIndex - 1;
+    int size = service.getPoolSize();
+    if (size == 0) return defaultPalette;
 
-    if (currentIndex == 0)
-        return service.getPalettePool().palettes.at(currentIndex);
-
-    service.getPalettePool().currentItem = prevIndex;
-    return service.getPalettePool().palettes.at(prevIndex);
+    auto& pool = service.getPalettePool();
+    pool.currentItem = (pool.currentItem - 1 + size) % size;
+    return pool.palettes.at(pool.currentItem);
 }
 
 std::string SettingsManager::setMode(bool next) 
