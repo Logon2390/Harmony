@@ -17,26 +17,22 @@ SavedPalette &SettingsManager::getCurrentPalette() {
 
 SavedPalette SettingsManager::getNextPalette()
 {
-    int currentIndex = service.getPalettePool().currentItem;
-    int nextIndex = currentIndex + 1;
-
-    if (nextIndex >= service.getPoolSize())
-        return service.getPalettePool().palettes.at(currentIndex);
-
-    service.getPalettePool().currentItem = nextIndex;
-    return service.getPalettePool().palettes.at(nextIndex);
+    int size = service.getPoolSize();
+    if (size == 0) return defaultPalette;
+    
+    auto& pool = service.getPalettePool();
+    pool.currentItem = (pool.currentItem + 1) % size;
+    return pool.palettes.at(pool.currentItem);
 }
 
 SavedPalette SettingsManager::getPrevPalette()
 {
-    int currentIndex = service.getPalettePool().currentItem;
-    int prevIndex = currentIndex - 1;
+    int size = service.getPoolSize();
+    if (size == 0) return defaultPalette;
 
-    if (currentIndex == 0)
-        return service.getPalettePool().palettes.at(currentIndex);
-
-    service.getPalettePool().currentItem = prevIndex;
-    return service.getPalettePool().palettes.at(prevIndex);
+    auto& pool = service.getPalettePool();
+    pool.currentItem = (pool.currentItem - 1 + size) % size;
+    return pool.palettes.at(pool.currentItem);
 }
 
 std::string SettingsManager::setMode(bool next) 
@@ -72,14 +68,19 @@ void SettingsManager::setMaxColors(int numColors)
     if (numColors > 12) numColors = 12;
 
     m_request.num_colors = numColors;
+    resizePalette(m_request.palette, numColors);
     resizeAdjacency(numColors);
     updateAdjacency();
 
-    auto& palette = m_request.palette;
-    if (palette.size() < numColors) {
-        palette.resize(numColors, "-");
-    } else if (palette.size() > numColors) {
-        palette.resize(numColors);
+    if (isLoaded(getCurrentPalette().id)) {
+        auto& palette = getCurrentPalette().colors;
+        resizePalette(palette, numColors, true);
+
+        //sync colors with saved palette if loaded to avoid losing colors when changing color count
+        auto saved = DataManager::get().getPaletteByID(getCurrentPalette().id);
+        std::copy(saved.colors.begin(),
+                  saved.colors.begin() + std::min(palette.size(), saved.colors.size()),
+                  palette.begin());
     }
 }
 
@@ -131,8 +132,9 @@ bool SettingsManager::isColorLocked(std::string colorHex)
 
 void SettingsManager::swapColors(int indexFrom, int indexTo) 
 {
-    if (indexFrom < 0 || indexFrom >= m_request.num_colors) return;
-    if (indexTo < 0 || indexTo >= m_request.num_colors) return;
+    int paletteSize = getCurrentPalette().colors.size();
+    if (indexFrom < 0 || indexFrom >= paletteSize) return;
+    if (indexTo < 0 || indexTo >= paletteSize) return;
     if (indexFrom == indexTo) return;
 
     std::swap(getCurrentPalette().colors.at(indexFrom), getCurrentPalette().colors.at(indexTo));
@@ -163,8 +165,13 @@ void SettingsManager::addPalette(const SavedPalette &palette)
 void SettingsManager::removePalette(const std::string &id)
 {
     auto &palettes = service.getPalettePool().palettes;
-    palettes.erase(std::remove_if(palettes.begin(), palettes.end(), [&id](const SavedPalette &p) {
-        return p.id == id; }), palettes.end());
+
+    // Loaded palettes are always stored at the end of the pool
+    const size_t start = palettes.size() - m_loadedPalettes.size();
+    auto it = std::find_if(palettes.begin() + start, palettes.end(),
+                           [&id](const SavedPalette &p) { return p.id == id; });
+
+    if (it != palettes.end()) palettes.erase(it);
     m_loadedPalettes.erase(id);
 
     if (service.getPalettePool().currentItem >= palettes.size() && !palettes.empty()) {
@@ -207,6 +214,16 @@ int SettingsManager::getPresetBase(const std::string &preset) {
 void SettingsManager::resizeAdjacency(int newSize) 
 {
     m_request.adjacency.assign(newSize * newSize, 0);
+}
+
+void SettingsManager::resizePalette(std::vector<std::string>& palette, int numColors, bool isCustom) {
+    std::string val = isCustom ? "#FFFFFF" : "-";
+    
+    if (palette.size() < numColors) {
+        palette.resize(numColors, val);
+    } else if (palette.size() > numColors) {
+        palette.resize(numColors);
+    }
 }
 
 void SettingsManager::setAdjacency(int i, int j, int value) 

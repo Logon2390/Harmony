@@ -7,7 +7,7 @@
 	},
 	"id": "logon.harmony",
 	"name": "Harmony",
-	"version": "v1.0.1",
+	"version": "v1.0.2",
 	"developer": "Logon",
 	"description": "Color palette generator for Geometry Dash.",
 	"dependencies": {

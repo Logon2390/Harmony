@@ -105,7 +105,7 @@ bool MainPopup::init() {
     infoBtn->setID("info");
     infoBtn->m_scaleMultiplier = 1.1f;
 
-    CCSprite *swapSpr = CCSprite::createWithSpriteFrameName("edit_eChangeBG_001.png");
+    CCSprite *swapSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::swapBtnSprName);
     CCRect rect = swapSpr->getTextureRect();
     CCRect newRect = {rect.origin.x, rect.origin.y, rect.size.width, rect.size.height - 10.f};
     swapSpr->setTextureRect(newRect, true, newRect.size);
@@ -163,8 +163,7 @@ bool MainPopup::init() {
       CCSprite::createWithSpriteFrameName("icon.png"_spr),
       CircleBaseColor::Cyan, CircleBaseSize::Tiny);
 
-  m_generate = CCMenuItemSpriteExtra::create(
-      m_generateSpr, this, menu_selector(MainPopup::onGeneratePalette));
+  m_generate = CCMenuItemSpriteExtra::create(m_generateSpr, this, menu_selector(MainPopup::onGeneratePalette));
 
   ButtonSprite *saveSpr = ButtonSprite::create("Save");
   m_save = CCMenuItemSpriteExtra::create(saveSpr, this, menu_selector(MainPopup::onSavePalette));
@@ -274,13 +273,16 @@ void MainPopup::onSave(CCObject *) {
     this->m_isLoaded = service.getPoolSize() > 0;
     this->updateUI();
     if (simulation.isActive()) this->onPalettePoolChanged();
-    if (this->service.getPoolSize() <= 1) {
+    if (this->service.getPalettePool().currentItem == this->service.getPoolSize() - 1 || this->service.getPoolSize() == 0) {
       updateColorSprites(manager.getCurrentPalette().colors);
     }
   };
 }
 
-void MainPopup::onHide(CCObject *) { handleHide(!isColorMenuVisible()); }
+void MainPopup::onHide(CCObject *) { 
+  m_showColorMenu = !m_showColorMenu;
+  handleHide(m_showColorMenu); 
+}
 
 void MainPopup::onSettings(CCObject *) {
   auto settingsPopup = SettingsPopup::create();
@@ -313,8 +315,8 @@ void MainPopup::onGeneratePalette(CCObject *) {
   m_generate->addChildAtPosition(m_spinner, Anchor::Center);
   m_generate->setEnabled(false);
 
-  bool request =
-      service.request([weak = geode::WeakRef(this), request](Palette result) {
+  bool rateLimited =
+      service.request([weak = geode::WeakRef(this), rateLimited](Palette result) {
         if (auto self = weak.lock()) {
           self->m_spinner->removeFromParent();
           self->m_spinner = nullptr;
@@ -329,9 +331,8 @@ void MainPopup::onGeneratePalette(CCObject *) {
             self->onPalettePoolChanged();
           } else {
             std::string message =
-                request ? "Failed to generate palette. Please try again."
-                        : fmt::format(
-                          "Rate limit exceeded. Please wait {} seconds before making another request.",
+                rateLimited ? "Failed to generate palette. Please try again."
+                        : fmt::format("Rate limit exceeded. Please wait {} seconds before making another request.",
                           self->service.getSecondsUntilNextSlot());
             FLAlertLayer::create("Error", message, "OK")->show();
             return;
@@ -365,26 +366,22 @@ void MainPopup::onSavePalette(CCObject *sender) {
 }
 
 void MainPopup::onNextPalette(CCObject *sender) {
-  if (service.getPalettePool().currentItem < service.getPoolSize() - 1) {
-    updateColorSprites(manager.getNextPalette().colors);
-    updateUI();
+  updateColorSprites(manager.getNextPalette().colors);
+  updateUI();
 
-    if (simulation.isActive()) {
-      simulation.replace();
-      onPalettePoolChanged();
-    }
+  if (simulation.isActive()) {
+    simulation.replace();
+    onPalettePoolChanged();
   }
 }
 
 void MainPopup::onPrevPalette(CCObject *sender) {
-  if (service.getPalettePool().currentItem > 0) {
-    updateColorSprites(manager.getPrevPalette().colors);
-    updateUI();
+  updateColorSprites(manager.getPrevPalette().colors);
+  updateUI();
 
-    if (simulation.isActive()) {
-      simulation.replace();
-      onPalettePoolChanged();
-    }
+  if (simulation.isActive()) {
+    simulation.replace();
+    onPalettePoolChanged();
   }
 }
 
@@ -392,6 +389,13 @@ void MainPopup::onLockColorChannel(CCObject *sender) {
   auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
   auto menu = static_cast<CCMenu *>(item->getParent());
   int index = menu->getTag();
+
+  if (index >= manager.getRequest().num_colors) {
+    FLAlertLayer::create(
+      "Color limit exceeded", 
+      fmt::format("This color does not meet the current limit ({}). <cg> Increase </c> the color limit to <cp>lock this color.</c>", manager.getRequest().num_colors), "OK")->show();
+    return;
+  }
 
   NineSlice *colorSpr = static_cast<NineSlice *>(m_colorButtons->asExt<CCMenuItemSpriteExtra *>()[index]->getNormalImage());
   manager.toggleColorLock(index, cc3bToHexString(colorSpr->getColor()));
@@ -478,18 +482,18 @@ void MainPopup::onSimulationInfo(CCObject *) {
 
 void MainPopup::updateColorSprites(std::vector<std::string> colors) {
   CCArrayExt<CCMenuItemSpriteExtra *> colorButtons = m_colorButtons->asExt();
-  int limit = getCurrentColorLimit();
-  for (size_t i = 0; i < manager.MAX_COLORS; i++) {
-    updateColorButton(i, limit);
+    int limit = getCurrentColorLimit();
+    for (int i = 0; i < manager.MAX_COLORS; i++) {
+        updateColorButton(colorButtons[i], i, limit);
 
     if (i < colors.size()) {
       NineSlice *colorSpr = static_cast<NineSlice *>(colorButtons[i]->getNormalImage());
-      colorSpr->setColor(cc3bFromHexString(colors.at(i)).unwrapOr(ccColor3B{255, 255, 255}));
+      colorSpr->setColor(cc3bFromHexString(colors.at(i)).unwrapOr(ccWHITE));
     }
   }
 
   // sync visibility of the color menu with the color button
-  handleHide(isColorMenuVisible());
+  handleHide(m_showColorMenu);
   m_colorsMenu->updateLayout();
 }
 
@@ -508,9 +512,8 @@ void MainPopup::updateSimulationLabels() {
   m_simulationSavedLabel->setString(fmt::format("Saved Colors: {}", simulation.getSavedColors()).c_str());
 }
 
-void MainPopup::updateColorButton(int index, int limit) {
+void MainPopup::updateColorButton(CCMenuItemSpriteExtra *btn, int index, int limit) {
   bool isVisible = index < limit;
-  CCMenuItemSpriteExtra *btn = m_colorButtons->asExt<CCMenuItemSpriteExtra *>()[index];
 
   if (isVisible) {
     updateLockButton(index, manager.isColorLocked(index));
@@ -526,17 +529,9 @@ void MainPopup::updateColorButton(int index, int limit) {
 
 void MainPopup::updateNavigationButtons() {
   if (m_isLoaded) {
-    int currentIndex = service.getPalettePool().currentItem;
-    int totalItems = service.getPoolSize();
-    int prevOpacity = currentIndex > 0 ? 255 : 200;
-    int nextOpacity = currentIndex < totalItems - 1 ? 255 : 200;
-
-    m_prev->setOpacity(prevOpacity);
-    m_next->setOpacity(nextOpacity);
-    m_prev->setEnabled(currentIndex > 0);
-    m_next->setEnabled(currentIndex < totalItems - 1);
-    m_prev->setVisible(totalItems > 1);
-    m_next->setVisible(totalItems > 1);
+    bool hasMultipleItems = service.getPoolSize() > 1;
+    m_prev->setVisible(hasMultipleItems);
+    m_next->setVisible(hasMultipleItems);
   }
 
   m_navMenu->setEnabled(m_isLoaded);
@@ -544,11 +539,11 @@ void MainPopup::updateNavigationButtons() {
 }
 
 void MainPopup::updateLockButton(int index, bool locked) {
-  CCMenuItemSpriteExtra *color =
-      m_colorButtons->asExt<CCMenuItemSpriteExtra *>()[index];
-  CCMenuItemSpriteExtra *lockBtn = static_cast<CCMenuItemSpriteExtra *>(
-      color->getChildByIDRecursive("lock"));
+  CCMenuItemSpriteExtra *color = m_colorButtons->asExt<CCMenuItemSpriteExtra *>()[index];
+  CCMenuItemSpriteExtra *lockBtn = static_cast<CCMenuItemSpriteExtra *>(color->getChildByIDRecursive("lock"));
+  int opacity = index < SettingsManager::get().getRequest().num_colors ? 255 : 100;
 
+  lockBtn->setOpacity(opacity);
   const char *frame = locked ? SpriteBuilder::lockClosedSprName : SpriteBuilder::lockOpenSprName;
   static_cast<CCSprite *>(lockBtn->getNormalImage())->setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frame));
 }
@@ -615,11 +610,6 @@ void MainPopup::handleHide(bool show) {
     CCMenu *menu = static_cast<CCMenu *>(colorButtons[i]->getChildByID("menu"));
     if (menu) menu->setVisible(show);
   }
-}
-
-bool MainPopup::isColorMenuVisible() {
-  CCMenu *menu = static_cast<CCMenu *>(m_colorButtons->asExt<CCMenuItemSpriteExtra *>()[0]->getChildByID("menu"));
-  return menu ? menu->isVisible() : false;
 }
 
 int MainPopup::getCurrentColorLimit() {

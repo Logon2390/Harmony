@@ -1,15 +1,22 @@
 #include "DataManager.hpp"
+#include "../network/HueMintService.hpp"
+#include "../managers/SettingsManager.hpp"
 
-void DataManager::create(SavedPalette palette, const std::string &name) {
+void DataManager::create(SavedPalette& palette, const std::string &name) {
 
   auto id = random::generateUUID();
   palette.id = id;
   palette.name = name;
-  palette.isFavorite = false;
-  palette.colors = palette.colors;
+
+  SavedPalette copy = palette;
+  
+  // if the palette has more colors than the current setting, trim it to avoid saving unnecessary colors
+  if (SettingsManager::get().getRequest().num_colors < palette.colors.size()) {
+    copy.colors.resize(SettingsManager::get().getRequest().num_colors);
+  }
 
   auto &palettes = load();
-  palettes.push_back(palette);
+  palettes.push_back(copy);
   save();
 }
 
@@ -63,6 +70,20 @@ void DataManager::remove(const std::string &id)
   if (it != palettes.end()) {
     palettes.erase(it);
     save();
+  }
+
+  //if the palette was loaded, unload it from the pool
+  if (SettingsManager::get().isLoaded(id)) {
+    SettingsManager::get().removePalette(id);
+  }
+
+  //checks if the removed palette was in the current results and removes it from there to avoid ghost palettes
+  for (auto &saved : m_savedResults) {
+    if (saved.second) {
+      if (HueMintService::get().getPalettePool().palettes.at(saved.first).id == id) {
+        m_savedResults.erase(saved.first);
+      }
+    }
   }
 }
 

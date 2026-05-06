@@ -181,6 +181,7 @@ public:
   void setLoaded(const std::string& id);
   bool isLoaded(const std::string& id);
   void clearLoaded();
+  void resizePalette(std::vector<std::string>& palette, int numColors, bool isCustom = false);
   void resizeAdjacency(int newSize);
   void setAdjacency(int i, int j, int value);
   int getAdjacency(int i, int j);

@@ -33,6 +33,7 @@ protected:
     CCMenu* m_navMenu;
     CCMenu* m_colorsMenu;
     CCMenu* m_testMenu;
+    bool m_showColorMenu = true;
     bool m_isLoaded = false;
     int m_swapIndex = -1;
     const float width = 440.f;
@@ -40,7 +41,6 @@ protected:
     const float cropWidth = width - 20.f;
 
     bool init();
-
     void loadLastState();
 
     void onReset(CCObject* sender);
@@ -63,7 +63,7 @@ protected:
     void updateColorSprites(std::vector<std::string> colors);
     void updateInfoLabel();
     void updateSimulationLabels();
-    void updateColorButton(int index, int limit);
+    void updateColorButton(CCMenuItemSpriteExtra *btn, int index, int limit);
     void updateNavigationButtons();
     void updateLockButton(int index, bool locked);
     void updateSaveButton();
@@ -74,6 +74,5 @@ protected:
     void handleReset();
     void handleHide(bool show);
 
-    bool isColorMenuVisible();
     int getCurrentColorLimit();
 };

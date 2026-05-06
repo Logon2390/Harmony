@@ -39,11 +39,13 @@ bool SimulationOverlay::init(bool isLiveColorsEnabled, float positionY) {
   m_next = CCMenuItemSpriteExtra::create(
       SpriteBuilder::createArrow(ArrowSprite::Pink, true, 0.3f), this,
       menu_selector(SimulationOverlay::onNext));
+  m_next->setVisible(false);
   m_menu->addChildAtPosition(m_next, Anchor::Right, ccp(-10.f, 0.f));
 
   m_prev = CCMenuItemSpriteExtra::create(
       SpriteBuilder::createArrow(ArrowSprite::Pink, false, 0.3f), this,
       menu_selector(SimulationOverlay::onPrev));
+  m_prev->setVisible(false);
   m_menu->addChildAtPosition(m_prev, Anchor::Right, ccp(-25.f, 0.f));
 
   m_label = CCLabelBMFont::create("", SpriteBuilder::bigFontName);
@@ -71,20 +73,20 @@ bool SimulationOverlay::init(bool isLiveColorsEnabled, float positionY) {
                           ->setAxisAlignment(AxisAlignment::Start)
                           ->setCrossAxisLineAlignment(AxisAlignment::Center)
                           ->setCrossAxisOverflow(false)
-                          ->setAutoScale(true));
+                          ->setAutoScale(false));
 
   this->addChildAtPosition(m_colors, Anchor::Center, ccp(10.f, 0.f));
   m_colorSprites = CCArray::createWithCapacity(settings.MAX_COLORS);
 
   for (int i = 0; i < settings.MAX_COLORS; i++) {
-    CCSprite *colorSpr = CCSprite::create(SpriteBuilder::circleSprName);
+    CCSprite *colorSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
     m_colorSprites->addObject(colorSpr);
     colorSpr->setVisible(false);
+    colorSpr->setScale(0.3f);
     m_colors->addChild(colorSpr);
   }
 
-  updatePalettePreview();
-  updateInfoLabel();
+  updateUI();
   m_menu->updateLayout();
   m_colors->updateLayout();
   return true;
@@ -125,15 +127,13 @@ void SimulationOverlay::onVisibilityToggle(CCObject *) {
 }
 
 void SimulationOverlay::updateNavigationButtons() {
-  int currentIndex = service.getPalettePool().currentItem;
   int totalItems = service.getPoolSize();
-  int prevOpacity = currentIndex > 0 ? 255 : 200;
-  int nextOpacity = currentIndex < totalItems - 1 ? 255 : 200;
+  bool hasItems = totalItems > 1;
 
-  m_prev->setOpacity(prevOpacity);
-  m_next->setOpacity(nextOpacity);
-  m_prev->setEnabled(currentIndex > 0 && totalItems > 1);
-  m_next->setEnabled(currentIndex < totalItems - 1 && totalItems > 1);
+  m_prev->setVisible(hasItems);
+  m_next->setVisible(hasItems);
+  m_prev->setEnabled(hasItems);
+  m_next->setEnabled(hasItems);
 }
 
 void SimulationOverlay::updateInfoLabel() {
@@ -150,7 +150,7 @@ void SimulationOverlay::updatePalettePreview() {
 
   for (int i = 0; i < settings.MAX_COLORS; i++) {
     if (i < paletteSize) {
-      colorsSprites[i]->setColor(cc3bFromHexString(colors[i]).unwrapOr(ccColor3B{255, 255, 255}));
+      colorsSprites[i]->setColor(cc3bFromHexString(colors[i]).unwrapOr(ccWHITE));
       colorsSprites[i]->setVisible(true);
     } else {
       colorsSprites[i]->setVisible(false);

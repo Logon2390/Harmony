@@ -34,9 +34,9 @@ bool SimulationManager::replace()
 
     for (auto& [colorID, colorIndex] : m_colorSettings) {
         auto colorAction = m_effectManager->getColorAction(colorID);
-        auto ccColor = cc3bFromHexString(currentPalette.colors.at(colorIndex)).unwrapOr(ccColor3B{ 255, 255, 255 });
+        auto ccColor = cc3bFromHexString(currentPalette.colors.at(colorIndex)).unwrapOr(ccWHITE);
 
-        ccColor3B color = colorIndex < paletteSize ? ccColor : ccColor3B{ 255, 255, 255 };
+        ccColor3B color = colorIndex < paletteSize ? ccColor : ccWHITE;
         colorAction->m_fromColor = color;
     }
 
