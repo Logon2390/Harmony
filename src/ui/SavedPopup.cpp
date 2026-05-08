@@ -143,7 +143,7 @@ void SavedPopup::onFavoriteToggle(CCObject *sender) {
   updateFavBtnSprite(btn, m_manager.isFavorite(paletteId));
 
   // sync m_items with the manager's data
-  reloadItems();
+  updateItems(true);
 }
 
 void SavedPopup::onRemove(CCObject *sender) {
