@@ -315,30 +315,35 @@ void MainPopup::onGeneratePalette(CCObject *) {
   m_generate->addChildAtPosition(m_spinner, Anchor::Center);
   m_generate->setEnabled(false);
 
-  bool rateLimited =
-      service.request([weak = geode::WeakRef(this), rateLimited](Palette result) {
-        if (auto self = weak.lock()) {
-          self->m_spinner->removeFromParent();
-          self->m_spinner = nullptr;
-          self->m_generateSpr->getTopNode()->setVisible(true);
-          self->m_generate->setEnabled(true);
-          if (!result.colors.empty()) {
-            self->m_isLoaded = true;
-            self->data.clearSaved();
-            self->manager.clearLoaded();
-            self->updateColorSprites(result.colors);
-            self->updateUI();
-            self->onPalettePoolChanged();
-          } else {
-            std::string message =
-                rateLimited ? "Failed to generate palette. Please try again."
-                        : fmt::format("Rate limit exceeded. Please wait {} seconds before making another request.",
-                          self->service.getSecondsUntilNextSlot());
-            FLAlertLayer::create("Error", message, "OK")->show();
-            return;
-          }
-        }
-      });
+  service.request([weak = geode::WeakRef(this)](Palette result, HueMintService::RequestStatus status) {
+    if (auto self = weak.lock()) {
+      self->m_spinner->removeFromParent();
+      self->m_spinner = nullptr;
+      self->m_generateSpr->getTopNode()->setVisible(true);
+      self->m_generate->setEnabled(true);
+
+      if (status == HueMintService::RequestStatus::Ok && !result.colors.empty()) {
+        self->m_isLoaded = true;
+        self->data.clearSaved();
+        self->manager.clearLoaded();
+        self->updateColorSprites(result.colors);
+        self->updateUI();
+        self->onPalettePoolChanged();
+        return;
+      }
+
+      std::string message;
+      if (status == HueMintService::RequestStatus::RateLimited) {
+        message = fmt::format("Rate limit exceeded. Please wait {} seconds before making another request.", self->service.getSecondsUntilNextSlot());
+      }
+
+      if (status == HueMintService::RequestStatus::Failed) {
+        message = "Failed to generate palette. Please check your internet connection and try again.";
+      }
+
+      FLAlertLayer::create("Error", message, "OK")->show();
+    }
+  });
 }
 
 void MainPopup::onSavePalette(CCObject *sender) {
