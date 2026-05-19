@@ -47,6 +47,18 @@ bool SimulationSetupPopup::init(int colorID, bool specialColors) {
   optsBG->setOpacity(75);
   optsBG->setZOrder(1);
 
+  CCLabelBMFont *optsLabel = CCLabelBMFont::create("Current config", SpriteBuilder::goldFontName);
+  optsLabel->setScale(0.5f);
+  optsLabel->setAnchorPoint({0.f, 0.5f});
+  setupBG->addChildAtPosition(optsLabel, Anchor::TopLeft, ccp(10.f, 0.f));
+
+  CCMenuItemSpriteExtra *infoBtn = CCMenuItemSpriteExtra::create(
+    CCSprite::createWithSpriteFrameName(SpriteBuilder::infoIconName), 
+    this, menu_selector(SimulationSetupPopup::onInfo));
+  infoBtn->setScale(0.7f);
+  infoBtn->m_baseScale = 0.7f;
+  this->m_closeBtn->getParent()->addChildAtPosition(infoBtn, Anchor::TopRight, ccp(-20.f, -20.f));
+
   m_colorsMenu = CCMenu::create();
   m_colorsMenu->setZOrder(2);
   m_colorsMenu->setAnchorPoint(ccp(0.5f, 1.f));
@@ -136,6 +148,16 @@ bool SimulationSetupPopup::init(int colorID, bool specialColors) {
   return true;
 }
 
+void SimulationSetupPopup::onInfo(CCObject *) {
+  FLAlertLayer::create(
+      "Setup info",
+      "Here you can link your color channels to palette slots by clicking on them to setup your simulation colors."
+      "Below you can see the current simulation config, showing the color from the palette assigned to each color channel."
+      "You can also reset individual channels by clicking on the color button or all of them at once.",
+      "Ok")
+      ->show();
+}
+
 void SimulationSetupPopup::onResetAll(CCObject *) {
   geode::createQuickPopup(
     "Reset all colors settings",
@@ -152,13 +174,31 @@ void SimulationSetupPopup::onResetAll(CCObject *) {
 void SimulationSetupPopup::onReset(CCObject *) {
   geode::createQuickPopup(
       "Reset color channel setup",
-      "Are you sure you want to reset this color channel setup?", "Cancel",
+      fmt::format("Are you sure you want to reset the setup for color channel {}?", formatColorName(selectedColorID)).c_str(),
+      "Cancel",
       "Reset", [this](auto, bool btn2) {
         if (btn2) {
           simulation.remove(selectedColorID);
           handleReset(selectedColorID);
           Notification::create(
             fmt::format("Color channel {} setup removed", formatColorName(selectedColorID)).c_str(),
+            NotificationIcon::Info)->show();
+        }
+      });
+}
+
+void SimulationSetupPopup::onResetColor(CCObject * sender) {
+  int colorID = sender->getTag();
+  geode::createQuickPopup(
+      "Reset color channel setup",
+      fmt::format("Are you sure you want to reset the setup for color channel {}?", formatColorName(colorID)).c_str(),
+      "Cancel",
+      "Reset", [this, colorID](auto, bool btn2) {
+        if (btn2) {
+          simulation.remove(colorID);
+          handleReset(colorID);
+          Notification::create(
+            fmt::format("Color channel {} setup removed", formatColorName(colorID)).c_str(),
             NotificationIcon::Info)->show();
         }
       });
@@ -258,7 +298,7 @@ void SimulationSetupPopup::updateColorLabels() {
 }
 
 void SimulationSetupPopup::updatePaletteColors() {
-  auto paletteColors = m_paletteColors->asExt<ColorChannelSprite *>();
+  auto paletteColors = m_paletteColors->asExt<CCSprite *>();
   auto colors = settings.getCurrentPalette().colors;
   for (int i = 0; i < MAX_COLORS; i++) {
     if (i < colors.size()) {
@@ -333,13 +373,15 @@ void SimulationSetupPopup::onClose(CCObject *sender) {
 }
 
 void SimulationSetupPopup::handleReset(int colorID) {
-  auto colorSetups = m_colorSetups->asExt<ColorChannelSprite *>();
+  auto colorSetups = m_colorSetups->asExt<CCMenuItemSpriteExtra *>();
   updateResetControls();
 
-  for (ColorChannelSprite *setup : colorSetups) {
+  for (CCMenuItemSpriteExtra *setup : colorSetups) {
     if (setup->getTag() == colorID) {
+      auto parent = static_cast<CCMenu *>(setup->getParent());
       setup->removeFromParent();
       m_colorSetups->removeObject(setup);
+      parent->updateLayout();
       m_setups->m_contentLayer->updateLayout();
       break;
     }
@@ -347,10 +389,10 @@ void SimulationSetupPopup::handleReset(int colorID) {
 }
 
 void SimulationSetupPopup::handleResetAll() {
-  auto colorSetups = m_colorSetups->asExt<ColorChannelSprite *>();
+  auto colorSetups = m_colorSetups->asExt<CCMenuItemSpriteExtra *>();
   updateResetControls();
 
-  for (ColorChannelSprite *setup : colorSetups) {
+  for (CCMenuItemSpriteExtra *setup : colorSetups) {
     setup->removeFromParent();
   }
 
@@ -364,7 +406,7 @@ void SimulationSetupPopup::initColorsSetup() {
   float rowHeight = 110.f / MAX_COLORS;
 
   for (int i = 0; i < MAX_COLORS; i++) {
-    CCNode *setup = CCNode::create();
+    CCMenu *setup = CCMenu::create();
     setup->setContentSize({cropWidth - 30.f, rowHeight});
     setup->setLayout(RowLayout::create()
                          ->setAxisAlignment(AxisAlignment::Start)
@@ -403,16 +445,18 @@ void SimulationSetupPopup::initColorsSetup() {
         break;
       }
 
-      CCSprite *colorChannel = CCSprite::createWithSpriteFrameName(SpriteBuilder::colorBtnSprName);
-      colorChannel->setColor(color);
-      colorChannel->setScale(0.5f);
-      colorChannel->setTag(colorID);
+      CCSprite *colorChannelSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::colorBtnSprName);
+      colorChannelSpr->setColor(color);
+      colorChannelSpr->setScale(0.5f);
 
       CCLabelBMFont *channelLabel = CCLabelBMFont::create(formatColorName(colorID).c_str(), SpriteBuilder::bigFontName);
       channelLabel->setScale(0.5f);
-      colorChannel->addChildAtPosition(channelLabel, Anchor::Center);
-      setup->addChild(colorChannel);
-      m_colorSetups->addObject(colorChannel);
+      colorChannelSpr->addChildAtPosition(channelLabel, Anchor::Center);
+
+      CCMenuItemSpriteExtra *colorBtn = CCMenuItemSpriteExtra::create(colorChannelSpr, this, menu_selector(SimulationSetupPopup::onResetColor));
+      colorBtn->setTag(colorID);
+      setup->addChild(colorBtn);
+      m_colorSetups->addObject(colorBtn);
       hasColors = true;
       count++;
     }

@@ -40,8 +40,10 @@ protected:
 
     bool init(int colorID, bool specialColors = false);
 
+    void onInfo(CCObject* sender);
     void onResetAll(CCObject* sender);
     void onReset(CCObject* sender);
+    void onResetColor(CCObject* sender);
     void onModeChange(CCObject* sender);
     void onPrevPalette(CCObject* sender);
     void onNextPalette(CCObject* sender);
