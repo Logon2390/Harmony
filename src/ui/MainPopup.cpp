@@ -296,7 +296,7 @@ void MainPopup::onSettings(CCObject *) {
 
 void MainPopup::onColorChannel(CCObject *sender) {
   auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
-  auto colorSpr = static_cast<ColorChannelSprite *>(item->getNormalImage());
+  auto colorSpr = static_cast<CCSprite *>(item->getNormalImage());
 
   if (manager.isColorLocked(cc3bToHexString(colorSpr->getColor()))) {
     FLAlertLayer::create("This color is locked", "<cb>Unlock</c> this color to edit it.", "OK")->show();

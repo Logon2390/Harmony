@@ -210,7 +210,7 @@ void SavedPopup::onLoadToggle(CCObject *sender) {
 
 void SavedPopup::onColorSelect(CCObject *sender) {
   auto colorBtn = static_cast<CCMenuItemSpriteExtra *>(sender);
-  auto colorSpr = static_cast<ColorChannelSprite *>(colorBtn->getNormalImage());
+  auto colorSpr = static_cast<CCSprite *>(colorBtn->getNormalImage());
   auto color = colorSpr->getColor();
 
   ColorUtils::get().copyColor(color, sender);
