@@ -74,13 +74,15 @@ bool MainPopup::init() {
   NineSlice *optsBG = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
   m_mainLayer->addChildAtPosition(optsBG, Anchor::Center, ccp(0.f, -10.f));
   optsBG->setContentSize({420.f, 50.f});
-  optsBG->setColor({130, 64, 33});
+  optsBG->setColor(ccBLACK);
+  optsBG->setOpacity(75);
   optsBG->setZOrder(1);
 
   NineSlice *testModeBG = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
   m_mainLayer->addChildAtPosition(testModeBG, Anchor::Bottom, ccp(0.f, 40.f));
   testModeBG->setContentSize({cropWidth, 50.f});
-  testModeBG->setColor({130, 64, 33});
+  testModeBG->setColor(ccBLACK);
+  testModeBG->setOpacity(75);
   testModeBG->setZOrder(1);
 
   m_colorsMenu = CCMenu::create();

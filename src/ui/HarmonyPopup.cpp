@@ -48,7 +48,8 @@ bool HarmonyPopup::init(ccColor3B const &color) {
 CCNode *HarmonyPopup::createHarmonyRow(const char *title, Palette colors, float width, float height) {
   auto bg = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
   bg->setContentSize({width, height});
-  bg->setColor({130, 64, 33});
+  bg->setColor(ccBLACK);
+  bg->setOpacity(75);
 
   auto label = CCLabelBMFont::create(title, SpriteBuilder::goldFontName);
   label->setScale(0.3f);

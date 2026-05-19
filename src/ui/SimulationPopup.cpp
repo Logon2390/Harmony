@@ -213,7 +213,8 @@ void SimulationPopup::onResetAllInfo(CCObject *) {
 CCNode *SimulationPopup::createSelectorRow(const char *title, CCNode *node, CCMenuItemSpriteExtra *infoBtn, float height) {
   auto bg = geode::NineSlice::create(SpriteBuilder::backgroundSprName, {0, 0, 80, 80});
   bg->setContentSize({(width - 20.f), 25.f});
-  bg->setColor({130, 64, 33});
+  bg->setColor(ccBLACK);
+  bg->setOpacity(35);
 
   auto label = CCLabelBMFont::create(title, SpriteBuilder::goldFontName);
   label->setScale(0.5f);
