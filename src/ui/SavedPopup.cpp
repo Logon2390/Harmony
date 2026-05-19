@@ -308,7 +308,7 @@ NineSlice* SavedPopup::colorPalette(SavedPalette palette) {
   bg->addChildAtPosition(menu, Anchor::Center);
 
   for (int i = 0; i < palette.colors.size(); ++i) {
-    auto color = ColorChannelSprite::create();
+    auto color = CCSprite::createWithSpriteFrameName(SpriteBuilder::colorBtnSprName);
     color->setColor(cc3bFromHexString(palette.colors[i]).unwrapOr(ccWHITE));
     color->setScale(0.5f);
 

@@ -69,7 +69,7 @@ CCNode *HarmonyPopup::createHarmonyRow(const char *title, Palette colors, float 
 
   for (int i = 0; i < colors.colors.size(); ++i) {
     auto hex = colors.colors[i];
-    auto color = ColorChannelSprite::create();
+    auto color = CCSprite::createWithSpriteFrameName(SpriteBuilder::colorBtnSprName);
     color->setColor(ColorSelectPopup::hexToColor(hex));
     color->setScale(0.5f);
 

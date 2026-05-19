@@ -375,7 +375,7 @@ void SimulationSetupPopup::initColorsSetup() {
             ? cc3bFromHexString(colors.at(i)).unwrapOr(ccWHITE)
             : ccWHITE;
 
-    ColorChannelSprite *colorSpr = ColorChannelSprite::create();
+    CCSprite *colorSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::colorBtnSprName);
     colorSpr->setColor(indexColor);
     colorSpr->setScale(0.5f);
     m_paletteColors->addObject(colorSpr);
@@ -403,7 +403,7 @@ void SimulationSetupPopup::initColorsSetup() {
         break;
       }
 
-      ColorChannelSprite *colorChannel = ColorChannelSprite::create();
+      CCSprite *colorChannel = CCSprite::createWithSpriteFrameName(SpriteBuilder::colorBtnSprName);
       colorChannel->setColor(color);
       colorChannel->setScale(0.5f);
       colorChannel->setTag(colorID);
