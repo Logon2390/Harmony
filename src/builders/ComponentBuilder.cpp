@@ -34,6 +34,7 @@ CCNode *ComponentBuilder::createOptionSelector(const char *title, float width, S
     btn->m_scaleMultiplier = 1.1f;
     btn->setAnchorPoint({1.f, 0.5f});
     menu->addChildAtPosition(btn, Anchor::Right, ccp(-10.f, 0.f));
+    return option;
   }
 
   if (type == SelectorType::Option) {
@@ -53,6 +54,7 @@ CCNode *ComponentBuilder::createOptionSelector(const char *title, float width, S
       menu->addChildAtPosition(prevBtn, Anchor::Right, ccp(-130.f, 0.f));
     }
     menu->updateLayout();
+    return option;
   }
 
   return option;
