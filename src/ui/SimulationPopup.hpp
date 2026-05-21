@@ -14,8 +14,8 @@ protected:
     SimulationManager& simulation = SimulationManager::get();
     SettingsManager& settings = SettingsManager::get();
     HueMintService& service = HueMintService::get();
-    CCMenu* m_infoMenu;
     TextInput* m_colors;
+    ScrollLayer* m_layer;
     const float width = 300.f;
     const float height = 180.f;
     int ColorsCount = simulation.getMaxColorCount();
@@ -27,12 +27,11 @@ protected:
     void onColorsInput(gd::string input);
     void onSpecialColors(CCObject* sender);
     void onCustomColors(CCObject* sender);
+    void onRestoreConfig(CCObject* sender);
     void onResetAll(CCObject* sender);
     void onColorsInfo(CCObject* sender);
     void onSpecialColorsInfo(CCObject* sender);
     void onCustomColorsInfo(CCObject* sender);
     void onResetAllInfo(CCObject* sender);
-
-    CCNode* createSelectorRow(const char* title, CCNode* node, CCMenuItemSpriteExtra* infoBtn, float height);
-    CCMenu* createMenu(RowLayout* layout);
+    void onRestoreConfigInfo(CCObject* sender);
 };

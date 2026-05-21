@@ -1,6 +1,6 @@
 #include "SimulationPopup.hpp"
 #include "SimulationSetupPopup.hpp"
-#include "../builders/SpriteBuilder.hpp"
+#include "../builders/ComponentBuilder.hpp"
 
 SimulationPopup *SimulationPopup::create() {
   auto popup = new SimulationPopup();
@@ -13,80 +13,77 @@ SimulationPopup *SimulationPopup::create() {
 }
 
 bool SimulationPopup::init() {
-  if (!Popup::init(width, height))
-    return false;
-
+  if (!Popup::init(width, height)) return false;
   this->setTitle("Simulation Settings");
-  m_infoMenu = static_cast<CCMenu *>(this->m_closeBtn->getParent());
 
   // sync m_colors
   simulation.setColors(ColorsCount);
 
-  RowLayout *layout = RowLayout::create();
-  layout->setGap(0.5f);
-  layout->setAxisAlignment(AxisAlignment::Between);
-  layout->setCrossAxisLineAlignment(AxisAlignment::Center);
-  layout->setCrossAxisOverflow(false);
-  layout->setAutoScale(false);
+  m_layer = ScrollLayer::create({width - 20.f, 120.f}, true, true);
+  m_layer->setZOrder(2);
+  m_layer->m_contentLayer->setContentSize({width - 20.f, 120.f});
+  m_layer->m_contentLayer->setLayout(ScrollLayer::createDefaultListLayout());
 
-  RowLayout *buttonLayout = RowLayout::create();
-  buttonLayout->setGap(0.5f);
-  buttonLayout->setAxisAlignment(AxisAlignment::Center);
-  buttonLayout->setCrossAxisLineAlignment(AxisAlignment::Center);
-  buttonLayout->setCrossAxisOverflow(false);
-  buttonLayout->setAutoScale(false);
+  m_mainLayer->addChildAtPosition(m_layer, Anchor::BottomLeft, ccp(10.f, 20.f));
 
   m_colors = TextInput::create(100.f, "6");
   m_colors->setString(geode::utils::numToString(simulation.getMaxColorCount()));
   m_colors->setCommonFilter(CommonFilter::Int);
   m_colors->setMaxCharCount(2);
-  m_colors->setScale(0.7f);
+  m_colors->setScale(0.6f);
   m_colors->setCallback(
       [this](gd::string input) { this->onColorsInput(input); });
 
-  CCMenu *colorsMenu = createMenu(layout);
-  colorsMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green), this,
-      menu_selector(SimulationPopup::onDecreaseColors)));
-  colorsMenu->addChild(m_colors);
-  colorsMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green, true), this,
-      menu_selector(SimulationPopup::onIncreaseColors)));
-  CCMenuItemSpriteExtra *colorsInfoBtn = CCMenuItemSpriteExtra::create(
-      CCSprite::create(), this, menu_selector(SimulationPopup::onColorsInfo));
-  createSelectorRow("Colors", colorsMenu, colorsInfoBtn, 40.f);
+  MenuAction colorsAction = {
+    "Number of Colors",
+    nullptr,
+    menu_selector(SimulationPopup::onColorsInfo),
+    menu_selector(SimulationPopup::onDecreaseColors),
+    menu_selector(SimulationPopup::onIncreaseColors),
+    m_colors
+  };
 
-  ButtonSprite *specialColorsBtn = ButtonSprite::create("Special Colors");
-  specialColorsBtn->setScale(0.7f);
+  MenuAction specialColorsAction = {
+    "Special Colors",
+    menu_selector(SimulationPopup::onSpecialColors),
+    menu_selector(SimulationPopup::onSpecialColorsInfo)
+  };
 
-  CCMenu *specialMenu = createMenu(buttonLayout);
-  specialMenu->addChild(CCMenuItemSpriteExtra::create(
-      specialColorsBtn, this, menu_selector(SimulationPopup::onSpecialColors)));
-  CCMenuItemSpriteExtra *specialInfoBtn = CCMenuItemSpriteExtra::create(
-      CCSprite::create(), this,
-      menu_selector(SimulationPopup::onSpecialColorsInfo));
-  createSelectorRow("Special Colors", specialMenu, specialInfoBtn, 10.f);
+  MenuAction customColorsAction = {
+    "Custom Colors",
+    menu_selector(SimulationPopup::onCustomColors),
+    menu_selector(SimulationPopup::onCustomColorsInfo)
+  };
 
-  ButtonSprite *customColorsBtn = ButtonSprite::create("Custom Colors");
-  customColorsBtn->setScale(0.7f);
+  MenuAction restoreConfig = {
+    "Restore Config",
+    menu_selector(SimulationPopup::onRestoreConfig),
+    menu_selector(SimulationPopup::onRestoreConfigInfo)
+  };
 
-  CCMenu *customMenu = createMenu(buttonLayout);
-  customMenu->addChild(CCMenuItemSpriteExtra::create(
-      customColorsBtn, this, menu_selector(SimulationPopup::onCustomColors)));
-  CCMenuItemSpriteExtra *customInfoBtn = CCMenuItemSpriteExtra::create(
-      CCSprite::create(), this,
-      menu_selector(SimulationPopup::onCustomColorsInfo));
-  createSelectorRow("Custom Colors", customMenu, customInfoBtn, -20.f);
+  MenuAction resetAll = {
+    "Reset All",
+    menu_selector(SimulationPopup::onResetAll),
+    menu_selector(SimulationPopup::onResetAllInfo)
+  };
 
-  ButtonSprite *resetAllBtn = ButtonSprite::create("Reset All");
-  resetAllBtn->setScale(0.7f);
+  CCNode* colorsRow = ComponentBuilder::createOptionSelector("Colors", width - 20.f, SelectorType::Option, colorsAction, this);
+  m_layer->m_contentLayer->addChild(colorsRow);
 
-  CCMenu *resetAllMenu = createMenu(buttonLayout);
-  resetAllMenu->addChild(CCMenuItemSpriteExtra::create(resetAllBtn, this, menu_selector(SimulationPopup::onResetAll)));
-  CCMenuItemSpriteExtra *resetAllInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(), this, menu_selector(SimulationPopup::onResetAllInfo));
-  createSelectorRow("Reset All", resetAllMenu, resetAllInfoBtn, -50.f);
+  CCNode* specialColorsRow = ComponentBuilder::createOptionSelector("Special Colors", width - 20.f, SelectorType::Button, specialColorsAction, this);
+  m_layer->m_contentLayer->addChild(specialColorsRow);
 
-  m_infoMenu->updateLayout();
+  CCNode* customColorsRow = ComponentBuilder::createOptionSelector("Custom Colors", width - 20.f, SelectorType::Button, customColorsAction, this);
+  m_layer->m_contentLayer->addChild(customColorsRow);
+
+  CCNode* restoreConfigRow = ComponentBuilder::createOptionSelector("Restore Config", width - 20.f, SelectorType::Button, restoreConfig, this);
+  m_layer->m_contentLayer->addChild(restoreConfigRow);
+
+  CCNode* resetAllRow = ComponentBuilder::createOptionSelector("Reset All", width - 20.f, SelectorType::Button, resetAll, this);
+  m_layer->m_contentLayer->addChild(resetAllRow);
+
+  m_layer->m_contentLayer->updateLayout();
+  m_layer->moveToTop();
   return true;
 }
 
@@ -210,37 +207,19 @@ void SimulationPopup::onResetAllInfo(CCObject *) {
       ->show();
 }
 
-CCNode *SimulationPopup::createSelectorRow(const char *title, CCNode *node, CCMenuItemSpriteExtra *infoBtn, float height) {
-  auto bg = geode::NineSlice::create(SpriteBuilder::backgroundSprName, {0, 0, 80, 80});
-  bg->setContentSize({(width - 20.f), 25.f});
-  bg->setColor(ccBLACK);
-  bg->setOpacity(35);
-
-  auto label = CCLabelBMFont::create(title, SpriteBuilder::goldFontName);
-  label->setScale(0.5f);
-  label->setAnchorPoint({0.f, 0.5f});
-  bg->addChildAtPosition(label, Anchor::Left, ccp(10.f, 0.f));
-
-  bg->addChildAtPosition(node, Anchor::Right, ccp(-10.f, 0.f));
-  m_mainLayer->addChildAtPosition(bg, Anchor::Center, ccp(0.f, height));
-
-  auto infoSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::infoIconName);
-  infoSpr->setScale(0.5f);
-
-  infoBtn->setSprite(infoSpr);
-  infoBtn->setSelectedImage(infoSpr);
-  infoBtn->setPosition(label->getPositionX() + label->getScaledContentWidth() + 20.f, bg->getPositionY());
-  m_infoMenu->addChild(infoBtn);
-
-  node->updateLayout();
-  return bg;
+void SimulationPopup::onRestoreConfigInfo(CCObject *) {
+  FLAlertLayer::create(
+      "Setup Config",
+      "Here you can link your <cg>color channels</c> to <cy>palette slots</c> "
+      "by clicking on them to setup your simulation colors."
+      "Below you can see the current simulation config, showing the color from "
+      "the palette assigned to each color channel."
+      "You can also reset individual channels by clicking on the color button "
+      "or all of them at once.",
+      "Ok")
+      ->show();
 }
 
-CCMenu *SimulationPopup::createMenu(RowLayout *layout) {
-  auto menu = CCMenu::create();
-  menu->setLayout(layout);
-  menu->setScale(0.8f);
-  menu->setAnchorPoint({1.f, 0.5f});
-  menu->setContentSize({160.f, 60.f});
-  return menu;
+void SimulationPopup::onRestoreConfig(CCObject *) {
+  SimulationSetupPopup::create(0, false)->show();
 }
