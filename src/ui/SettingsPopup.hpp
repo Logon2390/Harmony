@@ -14,15 +14,16 @@ public:
 protected:
     SettingsManager& manager = SettingsManager::get();
     HueMintService& service = HueMintService::get();
+    CCNode* m_optionsLayer;
     CCLabelBMFont* m_mode;
     CCLabelBMFont* m_preset;
     TextInput* m_colors;
     TextInput* m_temperature;
     TextInput* m_results;
-    CCMenu* m_infoMenu;
 
     const float width = 300.f;
     const float height = 260.f;
+    const float cropWidth = width - 20.f;
 
     bool init();
 
@@ -50,7 +51,4 @@ protected:
     void onResetInfo(CCObject* sender);
 
     void updateFields();
-
-    CCNode* createSelectorRow(const char* title, CCNode* node, CCMenuItemSpriteExtra* infoBtn, float height);
-    CCMenu* createMenu(RowLayout* layout);
 };
