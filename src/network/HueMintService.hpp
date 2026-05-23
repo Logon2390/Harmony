@@ -14,13 +14,19 @@ struct PaletteResult
 
 class HueMintService {
 public:
+  enum class RequestStatus {
+    Ok,
+    RateLimited,
+    Failed,
+  };
+
   static HueMintService &get() {
     static HueMintService instance;
     return instance;
   }
   PaletteResult &getPalettePool() { return m_currentPaletteResult; }
   int getPoolSize() { return static_cast<int>(m_currentPaletteResult.palettes.size()); } 
-  bool request(std::function<void(Palette)> onComplete);
+  bool request(std::function<void(Palette, RequestStatus)> onComplete);
   int getRemainingRequests();
   int getSecondsUntilNextSlot();
 

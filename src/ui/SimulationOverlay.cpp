@@ -79,7 +79,7 @@ bool SimulationOverlay::init(bool isLiveColorsEnabled, float positionY) {
   m_colorSprites = CCArray::createWithCapacity(settings.MAX_COLORS);
 
   for (int i = 0; i < settings.MAX_COLORS; i++) {
-    CCSprite *colorSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
+    CCSprite *colorSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::colorBtnSprName);
     m_colorSprites->addObject(colorSpr);
     colorSpr->setVisible(false);
     colorSpr->setScale(0.3f);

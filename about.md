@@ -3,6 +3,7 @@
 <cy>Harmony</c> is a powerful tool for generating and managing <cy>color palettes</c> directly in the level editor, powered by [Huemint.com](https://huemint.com).
 
 Generate palettes of up to <cy>12 colors</c> and preview them in your level in <cg>real time</c>.
+[See overview](https://github.com/Logon2390/Harmony#harmony)
 
 ---
 

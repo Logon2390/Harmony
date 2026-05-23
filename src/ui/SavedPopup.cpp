@@ -143,7 +143,7 @@ void SavedPopup::onFavoriteToggle(CCObject *sender) {
   updateFavBtnSprite(btn, m_manager.isFavorite(paletteId));
 
   // sync m_items with the manager's data
-  reloadItems();
+  updateItems(true);
 }
 
 void SavedPopup::onRemove(CCObject *sender) {
@@ -210,7 +210,7 @@ void SavedPopup::onLoadToggle(CCObject *sender) {
 
 void SavedPopup::onColorSelect(CCObject *sender) {
   auto colorBtn = static_cast<CCMenuItemSpriteExtra *>(sender);
-  auto colorSpr = static_cast<ColorChannelSprite *>(colorBtn->getNormalImage());
+  auto colorSpr = static_cast<CCSprite *>(colorBtn->getNormalImage());
   auto color = colorSpr->getColor();
 
   ColorUtils::get().copyColor(color, sender);
@@ -262,7 +262,8 @@ void SavedPopup::reloadItems() {
 NineSlice* SavedPopup::colorPalette(SavedPalette palette) {
   auto bg = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
   bg->setContentSize({170.f, 70.f});
-  bg->setColor({130, 64, 33});
+  bg->setColor(ccBLACK);
+  bg->setOpacity(75);
   bg->setScale(0.9f);
 
   auto label = CCLabelBMFont::create(palette.name.c_str(), SpriteBuilder::goldFontName);
@@ -307,7 +308,7 @@ NineSlice* SavedPopup::colorPalette(SavedPalette palette) {
   bg->addChildAtPosition(menu, Anchor::Center);
 
   for (int i = 0; i < palette.colors.size(); ++i) {
-    auto color = ColorChannelSprite::create();
+    auto color = CCSprite::createWithSpriteFrameName(SpriteBuilder::colorBtnSprName);
     color->setColor(cc3bFromHexString(palette.colors[i]).unwrapOr(ccWHITE));
     color->setScale(0.5f);
 

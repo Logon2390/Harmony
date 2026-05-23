@@ -1,5 +1,6 @@
 #include "SettingsPopup.hpp"
 #include "../builders/SpriteBuilder.hpp"
+#include "../builders/ComponentBuilder.hpp"
 #include "../ui/AdjacencyPopup.hpp"
 
 SettingsPopup *SettingsPopup::create() {
@@ -14,135 +15,125 @@ SettingsPopup *SettingsPopup::create() {
 
 bool SettingsPopup::init() {
   if (!Popup::init(width, height)) return false;
-
   this->setTitle("Settings");
 
-  RowLayout *layout = RowLayout::create();
-  layout->setGap(0.5f);
-  layout->setAxisAlignment(AxisAlignment::Between);
-  layout->setCrossAxisLineAlignment(AxisAlignment::Center);
-  layout->setCrossAxisOverflow(false);
-  layout->setAutoScale(false);
+  m_optionsLayer = CCNode::create();
+  m_optionsLayer->setContentSize({width, 200.f});
+  m_optionsLayer->setAnchorPoint({0.5f, 0.5f});
+  m_optionsLayer->setLayout(
+    ColumnLayout::create()
+      ->setAxisAlignment(AxisAlignment::Center)
+      ->setAxisReverse(true)
+      ->setGap(5.f));
 
-  RowLayout *buttonLayout = RowLayout::create();
-  buttonLayout->setGap(0.5f);
-  buttonLayout->setAxisAlignment(AxisAlignment::Center);
-  buttonLayout->setCrossAxisLineAlignment(AxisAlignment::Center);
-  buttonLayout->setCrossAxisOverflow(false);
-  buttonLayout->setAutoScale(false);
-
-  m_infoMenu = CCMenu::create();
-  m_infoMenu->setZOrder(1);
-  m_infoMenu->setContentSize({width, height});
-  m_mainLayer->addChildAtPosition(m_infoMenu, Anchor::BottomLeft);
+  m_mainLayer->addChildAtPosition(m_optionsLayer, Anchor::Center, ccp(0.f, -10.f));
 
   m_mode = CCLabelBMFont::create(manager.getRequest().mode.c_str(), SpriteBuilder::bigFontName);
-  m_mode->setScale(0.5f);
-
-  CCMenu *modeMenu = createMenu(layout);
-  modeMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green), this,
-      menu_selector(SettingsPopup::onprevMode)));
-  modeMenu->addChild(m_mode);
-  modeMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green, true), this,
-      menu_selector(SettingsPopup::onNextMode)));
-
-  CCMenuItemSpriteExtra *modeInfoBtn = CCMenuItemSpriteExtra::create(
-      CCSprite::createWithSpriteFrameName(SpriteBuilder::infoIconName), this,
-      menu_selector(SettingsPopup::onModeInfo));
-  createSelectorRow("Mode", modeMenu, modeInfoBtn, 80.f);
+  m_mode->setScale(0.4f);
 
   m_preset = CCLabelBMFont::create(manager.getRequest().preset.c_str(), SpriteBuilder::bigFontName);
-  m_preset->setScale(0.5f);
-
-  CCMenu *presetMenu = createMenu(layout);
-  presetMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green), this,
-      menu_selector(SettingsPopup::onprevPreset)));
-  presetMenu->addChild(m_preset);
-  presetMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green, true), this,
-      menu_selector(SettingsPopup::onNextPreset)));
-  CCMenuItemSpriteExtra *presetInfoBtn = CCMenuItemSpriteExtra::create(
-      CCSprite::create(), this, menu_selector(SettingsPopup::onPresetInfo));
-  createSelectorRow("Presets", presetMenu, presetInfoBtn, 50.f);
+  m_preset->setScale(0.4f);
 
   m_colors = TextInput::create(100.f, "6");
   m_colors->setString(std::to_string(manager.getRequest().num_colors).c_str());
   m_colors->setCommonFilter(CommonFilter::Int);
   m_colors->setMaxCharCount(2);
-  m_colors->setScale(0.7f);
-  m_colors->setCallback(
-[this](gd::string input) { this->onColorsInput(input); });
-
-  CCMenu *colorsMenu = createMenu(layout);
-  colorsMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green), this,
-      menu_selector(SettingsPopup::onDecreaseColors)));
-  colorsMenu->addChild(m_colors);
-  colorsMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green, true), this,
-      menu_selector(SettingsPopup::onIncreaseColors)));
-  CCMenuItemSpriteExtra *colorsInfoBtn = CCMenuItemSpriteExtra::create(
-      CCSprite::create(), this, menu_selector(SettingsPopup::onColorsInfo));
-  createSelectorRow("Colors", colorsMenu, colorsInfoBtn, 20.f);
+  m_colors->setScale(0.6f);
+  m_colors->setCallback([this](gd::string input) { this->onColorsInput(input); });
 
   m_temperature = TextInput::create(100.f, "1.3");
   m_temperature->setString(std::to_string(manager.getRequest().temperature).erase(3).c_str());
   m_temperature->setCommonFilter(CommonFilter::Float);
   m_temperature->setMaxCharCount(3);
-  m_temperature->setScale(0.7f);
-  m_temperature->setCallback(
-      [this](gd::string input) { this->onTemperatureInput(input); });
-
-  CCMenu *tempMenu = createMenu(layout);
-  tempMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green), this,
-      menu_selector(SettingsPopup::onDecreaseTemp)));
-  tempMenu->addChild(m_temperature);
-  tempMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green, true), this,
-      menu_selector(SettingsPopup::onIncreaseTemp)));
-  CCMenuItemSpriteExtra *tempInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(), this, menu_selector(SettingsPopup::onTemperatureInfo));
-  createSelectorRow("Temperature", tempMenu, tempInfoBtn, -10.f);
+  m_temperature->setScale(0.6f);
+  m_temperature->setCallback([this](gd::string input) { this->onTemperatureInput(input); });
 
   m_results = TextInput::create(100.f, "10");
   m_results->setString(std::to_string(manager.getRequest().num_results).c_str());
   m_results->setCommonFilter(CommonFilter::Int);
   m_results->setMaxCharCount(2);
-  m_results->setScale(0.7f);
-  m_results->setCallback(
-      [this](gd::string input) { this->onResultsInput(input); });
+  m_results->setScale(0.6f);
+  m_results->setCallback([this](gd::string input) { this->onResultsInput(input); });
 
-  CCMenu *resultsMenu = createMenu(layout);
-  resultsMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green), this,
-      menu_selector(SettingsPopup::onDecreaseResults)));
-  resultsMenu->addChild(m_results);
-  resultsMenu->addChild(CCMenuItemSpriteExtra::create(
-      SpriteBuilder::createArrow(ArrowSprite::Green, true), this,
-      menu_selector(SettingsPopup::onIncreaseResults)));
-  CCMenuItemSpriteExtra *resultsInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(), this, menu_selector(SettingsPopup::onResultsInfo));
-  createSelectorRow("Results", resultsMenu, resultsInfoBtn, -40.f);
+  MenuAction modeAction = {
+    "Mode",
+    nullptr,
+    menu_selector(SettingsPopup::onModeInfo),
+    menu_selector(SettingsPopup::onprevMode),
+    menu_selector(SettingsPopup::onNextMode),
+    m_mode
+  };
 
-  ButtonSprite *adjacencyBtn = ButtonSprite::create("Modify");
-  adjacencyBtn->setScale(0.7f);
+  MenuAction presetAction = {
+    "Preset",
+    nullptr,
+    menu_selector(SettingsPopup::onPresetInfo),
+    menu_selector(SettingsPopup::onprevPreset),
+    menu_selector(SettingsPopup::onNextPreset),
+    m_preset
+  };
 
-  CCMenu *adjacencyMenu = createMenu(buttonLayout);
-  adjacencyMenu->addChild(CCMenuItemSpriteExtra::create(adjacencyBtn, this, menu_selector(SettingsPopup::onAdjacency)));
-  CCMenuItemSpriteExtra *adjacencyInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(), this, menu_selector(SettingsPopup::onAdjacencyInfo));
-  createSelectorRow("Adjacency", adjacencyMenu, adjacencyInfoBtn, -70.f);
+  MenuAction colorsAction = {
+    "Number of Colors",
+    nullptr,
+    menu_selector(SettingsPopup::onColorsInfo),
+    menu_selector(SettingsPopup::onDecreaseColors),
+    menu_selector(SettingsPopup::onIncreaseColors),
+    m_colors
+  };
 
-  ButtonSprite *resetBtn = ButtonSprite::create("Reset");
-  resetBtn->setScale(0.7f);
+  MenuAction tempAction = {
+    "Temperature",
+    nullptr,
+    menu_selector(SettingsPopup::onTemperatureInfo),
+    menu_selector(SettingsPopup::onDecreaseTemp),
+    menu_selector(SettingsPopup::onIncreaseTemp),
+    m_temperature
+  };
 
-  CCMenu *resetMenu = createMenu(buttonLayout);
-  resetMenu->addChild(CCMenuItemSpriteExtra::create(resetBtn, this, menu_selector(SettingsPopup::onResetSettings)));
-  CCMenuItemSpriteExtra *resetInfoBtn = CCMenuItemSpriteExtra::create(CCSprite::create(), this, menu_selector(SettingsPopup::onResetInfo));
-  createSelectorRow("Default values", resetMenu, resetInfoBtn, -100.f);
+  MenuAction resultsAction = {
+    "Results",
+    nullptr,
+    menu_selector(SettingsPopup::onResultsInfo),
+    menu_selector(SettingsPopup::onDecreaseResults),
+    menu_selector(SettingsPopup::onIncreaseResults),
+    m_results
+  };
 
-  m_infoMenu->updateLayout();
+  MenuAction adjacencyAction = {
+    "Adjacency",
+    menu_selector(SettingsPopup::onAdjacency),
+    menu_selector(SettingsPopup::onAdjacencyInfo)
+  };
+
+  MenuAction resetAction = {
+    "Reset Settings",
+    menu_selector(SettingsPopup::onResetSettings),
+    menu_selector(SettingsPopup::onResetInfo)
+  };
+
+  CCNode* modeSelector = ComponentBuilder::createOptionSelector("Mode", cropWidth, SelectorType::Option, modeAction, this);
+  m_optionsLayer->addChild(modeSelector);
+
+  CCNode* presetSelector = ComponentBuilder::createOptionSelector("Preset", cropWidth, SelectorType::Option, presetAction, this);
+  m_optionsLayer->addChild(presetSelector);
+
+  CCNode* colorsSelector = ComponentBuilder::createOptionSelector("Colors", cropWidth, SelectorType::Option, colorsAction, this);
+  m_optionsLayer->addChild(colorsSelector);
+
+  CCNode* tempSelector = ComponentBuilder::createOptionSelector("Temperature", cropWidth, SelectorType::Option, tempAction, this);
+  m_optionsLayer->addChild(tempSelector);
+
+  CCNode* resultsSelector = ComponentBuilder::createOptionSelector("Results", cropWidth, SelectorType::Option, resultsAction, this);
+  m_optionsLayer->addChild(resultsSelector);
+
+  CCNode* adjacencySelector = ComponentBuilder::createOptionSelector("Adjacency", cropWidth, SelectorType::Button, adjacencyAction, this);
+  m_optionsLayer->addChild(adjacencySelector);
+
+  CCNode* resetSelector = ComponentBuilder::createOptionSelector("Reset settings", cropWidth, SelectorType::Button, resetAction, this);
+  m_optionsLayer->addChild(resetSelector);
+
+  m_optionsLayer->updateLayout();
   return true;
 }
 
@@ -359,38 +350,4 @@ void SettingsPopup::onResetInfo(CCObject *) {
       "Reset Settings",
       "Resets all settings back to their <cy>default values</c>.", "OK")
       ->show();
-}
-
-CCNode* SettingsPopup::createSelectorRow(const char *title, CCNode *node, CCMenuItemSpriteExtra *infoBtn, float height) {
-  auto bg = geode::NineSlice::create(SpriteBuilder::backgroundSprName, {0, 0, 80, 80});
-  bg->setContentSize({(width - 20.f), 25.f});
-  bg->setColor({130, 64, 33});
-
-  auto label = CCLabelBMFont::create(title, SpriteBuilder::goldFontName);
-  label->setScale(0.5f);
-  label->setAnchorPoint({0.f, 0.5f});
-  bg->addChildAtPosition(label, Anchor::Left, ccp(10.f, 0.f));
-
-  bg->addChildAtPosition(node, Anchor::Right, ccp(-10.f, 0.f));
-  m_mainLayer->addChildAtPosition(bg, Anchor::Center, ccp(0.f, height));
-
-  auto infoSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::infoIconName);
-  infoSpr->setScale(0.5f);
-
-  infoBtn->setSprite(infoSpr);
-  infoBtn->setSelectedImage(infoSpr);
-  infoBtn->setPosition(label->getPositionX() + label->getScaledContentWidth() + 20.f, bg->getPositionY());
-  m_infoMenu->addChild(infoBtn);
-
-  node->updateLayout();
-  return bg;
-}
-
-CCMenu* SettingsPopup::createMenu(RowLayout *layout) {
-  auto menu = CCMenu::create();
-  menu->setLayout(layout);
-  menu->setScale(0.8f);
-  menu->setAnchorPoint({1.f, 0.5f});
-  menu->setContentSize({160.f, 60.f});
-  return menu;
 }

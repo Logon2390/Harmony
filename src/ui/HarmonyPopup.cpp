@@ -48,7 +48,8 @@ bool HarmonyPopup::init(ccColor3B const &color) {
 CCNode *HarmonyPopup::createHarmonyRow(const char *title, Palette colors, float width, float height) {
   auto bg = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
   bg->setContentSize({width, height});
-  bg->setColor({130, 64, 33});
+  bg->setColor(ccBLACK);
+  bg->setOpacity(75);
 
   auto label = CCLabelBMFont::create(title, SpriteBuilder::goldFontName);
   label->setScale(0.3f);
@@ -68,7 +69,7 @@ CCNode *HarmonyPopup::createHarmonyRow(const char *title, Palette colors, float 
 
   for (int i = 0; i < colors.colors.size(); ++i) {
     auto hex = colors.colors[i];
-    auto color = ColorChannelSprite::create();
+    auto color = CCSprite::createWithSpriteFrameName(SpriteBuilder::colorBtnSprName);
     color->setColor(ColorSelectPopup::hexToColor(hex));
     color->setScale(0.5f);
 
@@ -82,7 +83,7 @@ CCNode *HarmonyPopup::createHarmonyRow(const char *title, Palette colors, float 
 
 void HarmonyPopup::onColorSelect(CCObject *sender) {
   auto colorBtn = static_cast<CCMenuItemSpriteExtra *>(sender);
-  auto colorSpr = static_cast<ColorChannelSprite *>(colorBtn->getNormalImage());
+  auto colorSpr = static_cast<CCSprite *>(colorBtn->getNormalImage());
   auto color = colorSpr->getColor();
 
   ColorUtils::get().copyColor(color, sender);

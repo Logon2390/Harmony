@@ -74,13 +74,15 @@ bool MainPopup::init() {
   NineSlice *optsBG = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
   m_mainLayer->addChildAtPosition(optsBG, Anchor::Center, ccp(0.f, -10.f));
   optsBG->setContentSize({420.f, 50.f});
-  optsBG->setColor({130, 64, 33});
+  optsBG->setColor(ccBLACK);
+  optsBG->setOpacity(75);
   optsBG->setZOrder(1);
 
   NineSlice *testModeBG = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
   m_mainLayer->addChildAtPosition(testModeBG, Anchor::Bottom, ccp(0.f, 40.f));
   testModeBG->setContentSize({cropWidth, 50.f});
-  testModeBG->setColor({130, 64, 33});
+  testModeBG->setColor(ccBLACK);
+  testModeBG->setOpacity(75);
   testModeBG->setZOrder(1);
 
   m_colorsMenu = CCMenu::create();
@@ -193,17 +195,22 @@ bool MainPopup::init() {
   CCLabelBMFont *simulationLabel = CCLabelBMFont::create("Palette Simulation Mode", SpriteBuilder::goldFontName);
   simulationLabel->setScale(0.4f);
   simulationLabel->setAnchorPoint(ccp(0.f, 0.5f));
-  testModeBG->addChildAtPosition(simulationLabel, Anchor::TopLeft, ccp(10.f, -10.f));
+  testModeBG->addChildAtPosition(simulationLabel, Anchor::TopLeft, ccp(10.f, -5.f));
 
   m_simulationColorsLabel = CCLabelBMFont::create("Modified Colors: 0", SpriteBuilder::bigFontName);
   m_simulationColorsLabel->setScale(0.3f);
   m_simulationColorsLabel->setAnchorPoint(ccp(0.f, 0.5f));
-  testModeBG->addChildAtPosition(m_simulationColorsLabel, Anchor::TopLeft, ccp(10.f, -25.f));
+  testModeBG->addChildAtPosition(m_simulationColorsLabel, Anchor::TopLeft, ccp(10.f, -20.f));
 
   m_simulationSavedLabel = CCLabelBMFont::create("Saved Colors: 0", SpriteBuilder::bigFontName);
   m_simulationSavedLabel->setScale(0.3f);
   m_simulationSavedLabel->setAnchorPoint(ccp(0.f, 0.5f));
-  testModeBG->addChildAtPosition(m_simulationSavedLabel, Anchor::TopLeft, ccp(10.f, -35.f));
+  testModeBG->addChildAtPosition(m_simulationSavedLabel, Anchor::TopLeft, ccp(10.f, -30.f));
+
+  m_simulationSkippedLabel = CCLabelBMFont::create("Skipped Colors: 0", SpriteBuilder::bigFontName);
+  m_simulationSkippedLabel->setScale(0.3f);
+  m_simulationSkippedLabel->setAnchorPoint(ccp(0.f, 0.5f));
+  testModeBG->addChildAtPosition(m_simulationSkippedLabel, Anchor::TopLeft, ccp(10.f, -40.f));
 
   m_testMenu = CCMenu::create();
   m_testMenu->setZOrder(2);
@@ -294,7 +301,7 @@ void MainPopup::onSettings(CCObject *) {
 
 void MainPopup::onColorChannel(CCObject *sender) {
   auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
-  auto colorSpr = static_cast<ColorChannelSprite *>(item->getNormalImage());
+  auto colorSpr = static_cast<CCSprite *>(item->getNormalImage());
 
   if (manager.isColorLocked(cc3bToHexString(colorSpr->getColor()))) {
     FLAlertLayer::create("This color is locked", "<cb>Unlock</c> this color to edit it.", "OK")->show();
@@ -315,30 +322,35 @@ void MainPopup::onGeneratePalette(CCObject *) {
   m_generate->addChildAtPosition(m_spinner, Anchor::Center);
   m_generate->setEnabled(false);
 
-  bool rateLimited =
-      service.request([weak = geode::WeakRef(this), rateLimited](Palette result) {
-        if (auto self = weak.lock()) {
-          self->m_spinner->removeFromParent();
-          self->m_spinner = nullptr;
-          self->m_generateSpr->getTopNode()->setVisible(true);
-          self->m_generate->setEnabled(true);
-          if (!result.colors.empty()) {
-            self->m_isLoaded = true;
-            self->data.clearSaved();
-            self->manager.clearLoaded();
-            self->updateColorSprites(result.colors);
-            self->updateUI();
-            self->onPalettePoolChanged();
-          } else {
-            std::string message =
-                rateLimited ? "Failed to generate palette. Please try again."
-                        : fmt::format("Rate limit exceeded. Please wait {} seconds before making another request.",
-                          self->service.getSecondsUntilNextSlot());
-            FLAlertLayer::create("Error", message, "OK")->show();
-            return;
-          }
-        }
-      });
+  service.request([weak = geode::WeakRef(this)](Palette result, HueMintService::RequestStatus status) {
+    if (auto self = weak.lock()) {
+      self->m_spinner->removeFromParent();
+      self->m_spinner = nullptr;
+      self->m_generateSpr->getTopNode()->setVisible(true);
+      self->m_generate->setEnabled(true);
+
+      if (status == HueMintService::RequestStatus::Ok && !result.colors.empty()) {
+        self->m_isLoaded = true;
+        self->data.clearSaved();
+        self->manager.clearLoaded();
+        self->updateColorSprites(result.colors);
+        self->updateUI();
+        self->onPalettePoolChanged();
+        return;
+      }
+
+      std::string message;
+      if (status == HueMintService::RequestStatus::RateLimited) {
+        message = fmt::format("Rate limit exceeded. Please wait {} seconds before making another request.", self->service.getSecondsUntilNextSlot());
+      }
+
+      if (status == HueMintService::RequestStatus::Failed) {
+        message = "Failed to generate palette. Please check your internet connection and try again.";
+      }
+
+      FLAlertLayer::create("Error", message, "OK")->show();
+    }
+  });
 }
 
 void MainPopup::onSavePalette(CCObject *sender) {
@@ -510,6 +522,7 @@ void MainPopup::updateInfoLabel() {
 void MainPopup::updateSimulationLabels() {
   m_simulationColorsLabel->setString(fmt::format("Modified Colors: {}", simulation.getModifiedColors()).c_str());
   m_simulationSavedLabel->setString(fmt::format("Saved Colors: {}", simulation.getSavedColors()).c_str());
+  m_simulationSkippedLabel->setString(fmt::format("Skipped Colors: {}", simulation.getSkippedColors()).c_str());
 }
 
 void MainPopup::updateColorButton(CCMenuItemSpriteExtra *btn, int index, int limit) {
@@ -596,7 +609,7 @@ void MainPopup::handleReset() {
   // stop simulation if active, this will also restore original colors
   if (simulation.isActive()) {
     simulation.toggleSimulation();
-    simulation.reset();
+    simulation.clearSettings();
     Notification::create("Simulation mode stopped, original colors restored", NotificationIcon::Info)->show();
   }
   updateColorSprites(manager.getCurrentPalette().colors);

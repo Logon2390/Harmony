@@ -29,10 +29,10 @@ int HueMintService::getSecondsUntilNextSlot() {
     return remaining;
 }
 
-bool HueMintService::request(std::function<void(Palette)> onComplete) {
+bool HueMintService::request(std::function<void(Palette, RequestStatus)> onComplete) {
   if (isRateLimited()) {
-      onComplete(Palette{});
-      return false;
+    onComplete(Palette{}, RequestStatus::RateLimited);
+    return false;
   }
 
   auto req = web::WebRequest();
@@ -51,12 +51,12 @@ bool HueMintService::request(std::function<void(Palette)> onComplete) {
       m_requestTimers.emplace_back();
       mapPaletteResult(parsed);
       Palette palette = parsed.results.empty() ? Palette{} : parsed.results.at(0);
-      onComplete(palette);
+      onComplete(palette, RequestStatus::Ok);
       return palette;
     }
 
     geode::log::error("Request failed: {} - {}", res.code(), res.errorMessage());
-    onComplete(Palette{});
+    onComplete(Palette{}, RequestStatus::Failed);
     return Palette{};
   });
 
