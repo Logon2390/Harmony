@@ -24,6 +24,7 @@ protected:
     CCLabelBMFont* m_infoLabel;
     CCLabelBMFont* m_simulationColorsLabel;
     CCLabelBMFont* m_simulationSavedLabel;
+    CCLabelBMFont* m_simulationSkippedLabel;
     CircleButtonSprite* m_generateSpr;
     CCMenuItemSpriteExtra* m_generate;
     CCMenuItemSpriteExtra* m_save;

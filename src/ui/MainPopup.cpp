@@ -195,17 +195,22 @@ bool MainPopup::init() {
   CCLabelBMFont *simulationLabel = CCLabelBMFont::create("Palette Simulation Mode", SpriteBuilder::goldFontName);
   simulationLabel->setScale(0.4f);
   simulationLabel->setAnchorPoint(ccp(0.f, 0.5f));
-  testModeBG->addChildAtPosition(simulationLabel, Anchor::TopLeft, ccp(10.f, -10.f));
+  testModeBG->addChildAtPosition(simulationLabel, Anchor::TopLeft, ccp(10.f, -5.f));
 
   m_simulationColorsLabel = CCLabelBMFont::create("Modified Colors: 0", SpriteBuilder::bigFontName);
   m_simulationColorsLabel->setScale(0.3f);
   m_simulationColorsLabel->setAnchorPoint(ccp(0.f, 0.5f));
-  testModeBG->addChildAtPosition(m_simulationColorsLabel, Anchor::TopLeft, ccp(10.f, -25.f));
+  testModeBG->addChildAtPosition(m_simulationColorsLabel, Anchor::TopLeft, ccp(10.f, -20.f));
 
   m_simulationSavedLabel = CCLabelBMFont::create("Saved Colors: 0", SpriteBuilder::bigFontName);
   m_simulationSavedLabel->setScale(0.3f);
   m_simulationSavedLabel->setAnchorPoint(ccp(0.f, 0.5f));
-  testModeBG->addChildAtPosition(m_simulationSavedLabel, Anchor::TopLeft, ccp(10.f, -35.f));
+  testModeBG->addChildAtPosition(m_simulationSavedLabel, Anchor::TopLeft, ccp(10.f, -30.f));
+
+  m_simulationSkippedLabel = CCLabelBMFont::create("Skipped Colors: 0", SpriteBuilder::bigFontName);
+  m_simulationSkippedLabel->setScale(0.3f);
+  m_simulationSkippedLabel->setAnchorPoint(ccp(0.f, 0.5f));
+  testModeBG->addChildAtPosition(m_simulationSkippedLabel, Anchor::TopLeft, ccp(10.f, -40.f));
 
   m_testMenu = CCMenu::create();
   m_testMenu->setZOrder(2);
@@ -517,6 +522,7 @@ void MainPopup::updateInfoLabel() {
 void MainPopup::updateSimulationLabels() {
   m_simulationColorsLabel->setString(fmt::format("Modified Colors: {}", simulation.getModifiedColors()).c_str());
   m_simulationSavedLabel->setString(fmt::format("Saved Colors: {}", simulation.getSavedColors()).c_str());
+  m_simulationSkippedLabel->setString(fmt::format("Skipped Colors: {}", simulation.getSkippedColors()).c_str());
 }
 
 void MainPopup::updateColorButton(CCMenuItemSpriteExtra *btn, int index, int limit) {

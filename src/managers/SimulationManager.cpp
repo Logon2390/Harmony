@@ -14,6 +14,7 @@ bool SimulationManager::restore()
     }
 
     m_colorActions.clear();
+    m_skipColorIDs.clear();
     return false;
 }
 
