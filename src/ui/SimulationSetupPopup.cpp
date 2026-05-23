@@ -19,7 +19,6 @@ bool SimulationSetupPopup::init(int colorID, bool specialColors) {
   selectedColorID = colorID;
   m_isSpecialColors = specialColors;
   m_isSpecialColorsSetup = specialColors;
-  simulation.m_isSetupStage = true;
 
   m_colorButtons = CCArray::createWithCapacity(MAX_COLORS);
   m_labels = CCArray::createWithCapacity(MAX_COLORS);
@@ -164,7 +163,7 @@ void SimulationSetupPopup::onResetAll(CCObject *) {
     "Are you sure you want to reset all colors settings?",
     "Cancel", "Reset", [this](auto, bool btn2) {
       if (btn2) {
-        simulation.reset();
+        simulation.clearSettings();
         handleResetAll();
         Notification::create("All color channel setups removed", NotificationIcon::Info)->show();
       }

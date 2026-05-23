@@ -9,6 +9,7 @@ bool SimulationManager::restore()
     if (m_colorActions.empty()) return false;
     for (auto& [colorID, colorAction] : m_colorActions) {
         if (!colorAction) continue;
+        if (isColorSkipped(colorID)) continue;
         m_effectManager->setColorAction(colorAction, colorID);
     }
 
@@ -46,6 +47,26 @@ bool SimulationManager::replace()
 void SimulationManager::remove(int colorID) 
 {
     m_colorSettings.erase(colorID);
+}
+
+void SimulationManager::clearSettings() 
+{
+    m_colorSettings.clear();
+}
+
+void SimulationManager::skip(int colorID) 
+{
+    m_skipColorIDs.insert(colorID);
+}
+    
+void SimulationManager::unskip(int colorID) 
+{
+    m_skipColorIDs.erase(colorID);
+}
+
+bool SimulationManager::isColorSkipped(int colorID) 
+{
+    return m_skipColorIDs.contains(colorID);
 }
 
 bool SimulationManager::toggleSimulation()
@@ -147,4 +168,10 @@ bool SimulationManager::toggleSimulationFlag()
     m_isActive = !m_isActive;
     onSimulationToggled();
     return m_isActive;
+}
+
+void SimulationManager::reset() 
+{
+    m_colorSettings.clear();
+    m_skipColorIDs.clear();
 }

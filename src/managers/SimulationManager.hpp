@@ -5,6 +5,7 @@ using namespace geode::prelude;
 class SimulationManager {
     public:
         bool m_isSetupStage = false;
+        bool m_isConfigStage = false;
         GJEffectManager* m_effectManager;
         LevelSettingsObject* m_settings;
         static SimulationManager &get() {
@@ -14,11 +15,16 @@ class SimulationManager {
         int getMaxColorCount();
         void setup(int colorID, int colorIndex);
         void remove(int colorID);
-        void reset() { m_colorSettings.clear(); }
+        void reset();
+        void skip(int colorID);
+        void unskip(int colorID);
+        void clearSettings();
+        void clearSkips();
         bool restore();
         bool replace();
         bool toggleSimulation();
         bool isColorSetup(int colorID);
+        bool isColorSkipped(int colorID);
         int getColorSetup(int colorID);
         bool shouldDisplayOverlay();
         void saveOrginalColorActions();
@@ -36,6 +42,7 @@ class SimulationManager {
     private:
         std::unordered_map<int, Ref<ColorAction>> m_colorActions; //store original color actions to restore them later
         std::unordered_map<int, int> m_colorSettings; //colorID -> colorIndex
+        std::unordered_set<int> m_skipColorIDs; //colorIDs that should be skipped when restoring colors
         std::array<int, 6> m_specialColors = {1000, 1001, 1009, 1002, 1013, 1014}; //BG, G, G2, LINE, MG, MG2
         bool m_isActive = false;
         int m_colors = 2;

@@ -603,7 +603,7 @@ void MainPopup::handleReset() {
   // stop simulation if active, this will also restore original colors
   if (simulation.isActive()) {
     simulation.toggleSimulation();
-    simulation.reset();
+    simulation.clearSettings();
     Notification::create("Simulation mode stopped, original colors restored", NotificationIcon::Info)->show();
   }
   updateColorSprites(manager.getCurrentPalette().colors);

@@ -153,17 +153,30 @@ void SimulationPopup::onCustomColors(CCObject *) {
   GJColorSetupLayer::create(simulation.m_settings)->show();
 }
 
+void SimulationPopup::onRestoreConfig(CCObject *) {
+  if (simulation.getModifiedColors() == 0) {
+    FLAlertLayer::create(
+        "No colors to restore",
+        "You haven't modified any colors yet, so there is nothing to restore.",
+        "OK")->show();
+    return;
+  }
+
+  simulation.m_isConfigStage = true;
+  GJColorSetupLayer::create(simulation.m_settings)->show();
+}
+
 void SimulationPopup::onResetAll(CCObject *) {
   geode::createQuickPopup(
     "Reset all colors settings",
     "Are you sure you want to reset all colors settings. This will <cy>stop palette simulation if active.</c>?",
     "Cancel", "Reset", [this](auto, bool btn2) {
       if (btn2) {
-        simulation.reset();
         if (simulation.isActive()) {
           simulation.toggleSimulation();
           onSettingsChanged();
-        } 
+        }
+        simulation.reset();
         Notification::create("All color channel setups removed",NotificationIcon::Info)->show();
       }
     });
@@ -208,18 +221,11 @@ void SimulationPopup::onResetAllInfo(CCObject *) {
 }
 
 void SimulationPopup::onRestoreConfigInfo(CCObject *) {
-  FLAlertLayer::create(
-      "Setup Config",
-      "Here you can link your <cg>color channels</c> to <cy>palette slots</c> "
-      "by clicking on them to setup your simulation colors."
-      "Below you can see the current simulation config, showing the color from "
-      "the palette assigned to each color channel."
-      "You can also reset individual channels by clicking on the color button "
-      "or all of them at once.",
+  geode::MDPopup::create(
+      "Restore Config",
+      "Here you can select which of your modified colors you want to be skipped when restoring colors on simulation stop. "
+      "This is useful if you want to keep some of the changes you made during the simulation, while still restoring the linked palette colors. \n\n"
+      "Skipped colors will be highlighted in red in the color channel list. <cr>CAUTION:</c> <co>Their original color will be lost after the simulation stops.</c>",
       "Ok")
       ->show();
-}
-
-void SimulationPopup::onRestoreConfig(CCObject *) {
-  SimulationSetupPopup::create(0, false)->show();
 }

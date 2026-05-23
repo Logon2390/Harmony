@@ -1,3 +1,7 @@
+# 1.0.3
+- Adds "Restore config" option to simulation settings.
+- Fix even more bugs.
+
 # 1.0.2
 - New mod logo :D
 - Fix more bugs.
