@@ -1,5 +1,6 @@
 #include "SettingsManager.hpp"
 #include "../network/HueMintService.hpp"
+#include "../utils/ColorUtils.hpp"
 
 HueMintService& service = HueMintService::get();
 
@@ -109,6 +110,15 @@ void SettingsManager::setPaletteName(const std::string &name)
 {
     auto& palette = getCurrentPalette();
     palette.name = name;
+}
+
+void SettingsManager::applyHsv(ccHSVValue hsv, int index)
+{
+    auto& palette = getCurrentPalette();
+    for (size_t i = 0; i < palette.colors.size(); i++) {
+        if (index >= 0 && (int)i != index) continue;
+        palette.colors[i] = ColorUtils::applyHsvHex(palette.colors[i], hsv);
+    }
 }
 
 void SettingsManager::toggleColorLock(int index, std::string colorHex) 
