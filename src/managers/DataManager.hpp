@@ -39,8 +39,6 @@ class DataManager {
             static DataManager instance;
             return instance;
         }
-        //stores the index of the saved palettes in the current results to avoid saving duplicates
-        std::unordered_map<int, bool> m_savedResults;
         std::vector<SavedPalette> m_palettes;
         std::vector<SavedPalette>& load();
         std::vector<SavedPalette> getPaletteByName(const std::string& name);
@@ -52,9 +50,6 @@ class DataManager {
         void setFavorite(const std::string& id);
         bool isFavorite(const std::string& id);
         void save();
-        void setSaved(int index);
-        bool isSaved(int index);
-        void clearSaved();
     private:
         DataManager() {
             m_palettes = {};
