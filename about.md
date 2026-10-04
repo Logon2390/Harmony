@@ -22,6 +22,9 @@ Explore the color relationships of any color in your palette by clicking its <cy
 - <c-FF6B6B>Complementary</c>, <c-FF7F50>Analogous</c>, <c-FFD93D>Triadic</c>, <c-6BCB77>Tetradic</c>, <c-4D96FF>Split-Complementary</c> and <c-9B72CF>Square</c> harmonies.
 - <c-FF6B6B>Shades</c>, <c-FFD93D>Tints</c> and <c-4D96FF>Color Scales</c> derived from the selected color.
 
+### HSV Settings
+Fine-tune your palette with <cy>HSV</c>. Adjust <cy>hue</c>, <cy>saturation</c> and <cy>brightness</c> for the whole palette or a <cy>single color</c>, with an optional <cy>comparison view</c> to preview the result against the original. You can <cg>apply</c> the changes to make them permanent.
+
 ### Palette Simulation
 Preview how a palette looks in your level <cy>in real time</c>.
 
