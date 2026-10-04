@@ -14,6 +14,14 @@ SimulationOverlay *SimulationOverlay::create(bool isLiveColorsEnabled, float pos
 void SimulationOverlay::onToggleVisibility() {
   m_menu->setEnabled(simulation.shouldDisplayOverlay());
   this->setVisible(simulation.shouldDisplayOverlay());
+
+  if (!simulation.isActive()) {
+    m_hsvMode = false;
+    simulation.setHsvActive(false);
+    resetHsvWidget();
+    if (m_hsvWidget) m_hsvWidget->setVisible(false);
+  }
+
   refresh();
 }
 
@@ -53,21 +61,31 @@ bool SimulationOverlay::init(bool isLiveColorsEnabled, float positionY) {
   m_label->setAnchorPoint({0.f, 0.5f});
   this->addChildAtPosition(m_label, Anchor::Left, ccp(5.f, 0.f));
 
+  auto hsvBtnSpr = CCSprite::createWithSpriteFrameName("accountBtn_settings_001.png");
+  hsvBtnSpr->setScale(0.3f);
+  m_hsvBtn = CCMenuItemSpriteExtra::create(hsvBtnSpr, this, menu_selector(SimulationOverlay::onHsvToggle));
+  m_menu->addChildAtPosition(m_hsvBtn, Anchor::Left, ccp(65.f, 0.f));
+
   auto shuffleSpr = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName("shuffle.png"_spr), EditorBaseColor::LightBlue);
   shuffleSpr->setScale(0.35f);
 
   auto visibilitySpr = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName(SpriteBuilder::hideSprName), EditorBaseColor::DarkGray);
   visibilitySpr->setScale(0.35f);
 
-  m_visibilityBtn = CCMenuItemSpriteExtra::create(visibilitySpr, this, menu_selector(SimulationOverlay::onVisibilityToggle));
-  m_menu->addChildAtPosition(m_visibilityBtn, Anchor::Left, ccp(85.f, 0.f));
-
   m_shuffleBtn = CCMenuItemSpriteExtra::create(shuffleSpr, this, menu_selector(SimulationOverlay::onShuffle));
-  m_menu->addChildAtPosition(m_shuffleBtn, Anchor::Left, ccp(65.f, 0.f));
+  m_menu->addChildAtPosition(m_shuffleBtn, Anchor::Left, ccp(85.f, 0.f));
+
+  m_visibilityBtn = CCMenuItemSpriteExtra::create(visibilitySpr, this, menu_selector(SimulationOverlay::onVisibilityToggle));
+  m_menu->addChildAtPosition(m_visibilityBtn, Anchor::Left, ccp(105.f, 0.f));
+
+  // HSV widget, hidden until the HSV button is toggled
+  createHsvWidget(this, Anchor::BottomLeft, ccp(70.f, 70.f));
+  m_hsvWidget->setScale(0.5f);
+
 
   m_colors = CCNode::create();
-  m_colors->setAnchorPoint(ccp(0.5f, 0.5f));
-  m_colors->setContentSize({80.f, height});
+  m_colors->setAnchorPoint(ccp(0.f, 0.5f));
+  m_colors->setContentSize({width - 140.f, height});
   m_colors->setLayout(RowLayout::create()
                           ->setGap(1.f)
                           ->setAxisAlignment(AxisAlignment::Start)
@@ -75,8 +93,9 @@ bool SimulationOverlay::init(bool isLiveColorsEnabled, float positionY) {
                           ->setCrossAxisOverflow(false)
                           ->setAutoScale(false));
 
-  this->addChildAtPosition(m_colors, Anchor::Center, ccp(10.f, 0.f));
+  this->addChildAtPosition(m_colors, Anchor::Center, ccp(-30.f, 0.f));
   m_colorSprites = CCArray::createWithCapacity(settings.MAX_COLORS);
+  m_selectSprites = CCArray::createWithCapacity(settings.MAX_COLORS);
 
   for (int i = 0; i < settings.MAX_COLORS; i++) {
     CCSprite *colorSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::colorBtnSprName);
@@ -84,6 +103,13 @@ bool SimulationOverlay::init(bool isLiveColorsEnabled, float positionY) {
     colorSpr->setVisible(false);
     colorSpr->setScale(0.3f);
     m_colors->addChild(colorSpr);
+
+    // marker shown on slots that are linked to at least one color channel;
+    CCSprite *selectSpr = CCSprite::createWithSpriteFrameName("GJ_select_001.png");
+    colorSpr->addChildAtPosition(selectSpr, Anchor::Center);
+    selectSpr->setScale(colorSpr->getContentSize().width * 1.2f / selectSpr->getContentSize().width);
+    selectSpr->setVisible(false);
+    m_selectSprites->addObject(selectSpr);
   }
 
   updateUI();
@@ -122,8 +148,20 @@ void SimulationOverlay::onVisibilityToggle(CCObject *) {
   m_next->setOpacity(m_isHidden ? 255 : 50);
   m_prev->setOpacity(m_isHidden ? 255 : 50);
   m_label->setOpacity(m_isHidden ? 255 : 50);
+  if (m_hsvBtn) m_hsvBtn->setOpacity(m_isHidden ? 255 : 50);
 
   m_isHidden = !m_isHidden;
+}
+
+void SimulationOverlay::onHsvToggle(CCObject *) {
+  m_hsvMode = !m_hsvMode;
+  if (m_hsvWidget) m_hsvWidget->setVisible(m_hsvMode);
+  if (m_hsvMode) simulation.setHsvActive(true);
+}
+
+void SimulationOverlay::onHsvValueChanged(const ccHSVValue &value) {
+  simulation.setHsvValue(value);
+  simulation.replace();
 }
 
 void SimulationOverlay::updateNavigationButtons() {
@@ -145,15 +183,24 @@ void SimulationOverlay::updateInfoLabel() {
 
 void SimulationOverlay::updatePalettePreview() {
   auto colorsSprites = m_colorSprites->asExt<CCSprite *>();
+  auto selectSprites = m_selectSprites->asExt<CCSprite *>();
   auto colors = settings.getCurrentPalette().colors;
   int paletteSize = colors.size();
+
+  // indexes linked to at least one color channel
+  std::unordered_set<int> linked;
+  for (auto& [colorID, colorIndex] : simulation.getColorSettings()) {
+    linked.insert(colorIndex);
+  }
 
   for (int i = 0; i < settings.MAX_COLORS; i++) {
     if (i < paletteSize) {
       colorsSprites[i]->setColor(cc3bFromHexString(colors[i]).unwrapOr(ccWHITE));
       colorsSprites[i]->setVisible(true);
+      selectSprites[i]->setVisible(linked.contains(i));
     } else {
       colorsSprites[i]->setVisible(false);
+      selectSprites[i]->setVisible(false);
     }
   }
   m_colors->updateLayout();
