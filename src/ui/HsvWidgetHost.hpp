@@ -14,7 +14,7 @@ protected:
     ConfigureHSVWidget* m_hsvWidget = nullptr;
 
     void createHsvWidget(CCNode* parent, Anchor anchor = Anchor::BottomLeft, const CCPoint& offset = CCPointZero) {
-        m_hsvWidget = ConfigureHSVWidget::create(ColorUtils::HSV_IDENTITY, true, true);
+        m_hsvWidget = ConfigureHSVWidget::create(ColorUtils::HSV_IDENTITY, false, true);
         m_hsvWidget->m_delegate = this;
         m_hsvWidget->setZOrder(10);
         m_hsvWidget->setVisible(false);
