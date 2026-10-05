@@ -1,4 +1,5 @@
 #pragma once
+#include "../utils/ColorUtils.hpp"
 
 using namespace geode::prelude;
 
@@ -28,6 +29,10 @@ class SimulationManager {
         int getColorSetup(int colorID);
         bool shouldDisplayOverlay();
         void saveOrginalColorActions();
+        void setHsvActive(bool active) { m_hsvActive = active; }
+        void setHsvValue(const ccHSVValue& hsv) { m_hsvValue = hsv; }
+        bool isHsvActive() const { return m_hsvActive; }
+        const ccHSVValue& getHsvValue() const { return m_hsvValue; }
         const bool isActive() const { return m_isActive; }
         const void setColors(int colors) { m_colors = colors; }
         const int getColors() const { return m_colors; }
@@ -47,6 +52,8 @@ class SimulationManager {
         std::array<int, 6> m_specialColors = {1000, 1001, 1009, 1002, 1013, 1014}; //BG, G, G2, LINE, MG, MG2
         bool m_isActive = false;
         int m_colors = 2;
+        bool m_hsvActive = false;
+        ccHSVValue m_hsvValue = ColorUtils::HSV_IDENTITY;
         bool toggleSimulationFlag();
         SimulationManager() = default;
 };

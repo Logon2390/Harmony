@@ -1,5 +1,7 @@
 #include "ColorUtils.hpp"
 
+const ccHSVValue ColorUtils::HSV_IDENTITY = cchsv(0.f, 1.f, 1.f, false, false);
+
 std::string ColorUtils::hsvToHex(HSV hsv)
 {
     RGBA rgba = CCControlUtils::RGBfromHSV(hsv);
@@ -20,4 +22,20 @@ void ColorUtils::copyColor(ccColor3B color, CCObject *sender)
     m_colorSelectPopup->onCopy(sender);
 
     Notification::create("Color copied!", NotificationIcon::Success)->show();
+}
+
+bool ColorUtils::isHsvIdentity(const ccHSVValue& hsv)
+{
+    return hsv == HSV_IDENTITY;
+}
+
+ccColor3B ColorUtils::applyHsv(ccColor3B color, const ccHSVValue& hsv)
+{
+    return GameToolbox::transformColor(color, hsv);
+}
+
+std::string ColorUtils::applyHsvHex(const std::string& hex, const ccHSVValue& hsv)
+{
+    ccColor3B color = cc3bFromHexString(hex).unwrapOr(ccWHITE);
+    return "#" + cc3bToHexString(applyHsv(color, hsv));
 }

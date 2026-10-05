@@ -1,5 +1,6 @@
 #include "SimulationManager.hpp"
 #include "../network/HueMintService.hpp"
+#include "../utils/ColorUtils.hpp"
 
 SettingsManager& settings = SettingsManager::get();
 
@@ -36,9 +37,13 @@ bool SimulationManager::replace()
 
     for (auto& [colorID, colorIndex] : m_colorSettings) {
         auto colorAction = m_effectManager->getColorAction(colorID);
-        auto ccColor = cc3bFromHexString(currentPalette.colors.at(colorIndex)).unwrapOr(ccWHITE);
+        if (!colorAction) continue;
 
-        ccColor3B color = colorIndex < paletteSize ? ccColor : ccWHITE;
+        ccColor3B color = ccWHITE;
+        if (colorIndex >= 0 && colorIndex < paletteSize) {
+            color = cc3bFromHexString(currentPalette.colors.at(colorIndex)).unwrapOr(ccWHITE);
+        }
+        if (m_hsvActive) color = ColorUtils::applyHsv(color, m_hsvValue);
         colorAction->m_fromColor = color;
     }
 
@@ -175,4 +180,6 @@ void SimulationManager::reset()
 {
     m_colorSettings.clear();
     m_skipColorIDs.clear();
+    m_hsvActive = false;
+    m_hsvValue = ColorUtils::HSV_IDENTITY;
 }

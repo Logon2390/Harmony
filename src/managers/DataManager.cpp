@@ -37,21 +37,6 @@ void DataManager::save()
     Mod::get()->setSavedValue("palettes", m_palettes); 
 }
 
-void DataManager::setSaved(int index) 
-{
-    m_savedResults[index] = true;
-}
-
-bool DataManager::isSaved(int index)
-{
-    return m_savedResults.contains(index) && m_savedResults.at(index);
-}
-
-void DataManager::clearSaved() 
-{
-    m_savedResults.clear();
-}
-
 std::vector<SavedPalette> &DataManager::load() 
 {
   if (m_palettes.empty()) {
@@ -75,15 +60,6 @@ void DataManager::remove(const std::string &id)
   //if the palette was loaded, unload it from the pool
   if (SettingsManager::get().isLoaded(id)) {
     SettingsManager::get().removePalette(id);
-  }
-
-  //checks if the removed palette was in the current results and removes it from there to avoid ghost palettes
-  for (auto &saved : m_savedResults) {
-    if (saved.second) {
-      if (HueMintService::get().getPalettePool().palettes.at(saved.first).id == id) {
-        m_savedResults.erase(saved.first);
-      }
-    }
   }
 }
 

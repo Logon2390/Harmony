@@ -21,6 +21,7 @@ bool MainPopup::init() {
 
   m_isLoaded = service.getPoolSize() > 0;
   m_colorButtons = CCArray::createWithCapacity(manager.MAX_COLORS);
+  m_singleHsvBtnState.fill(-1);
 
   auto resetSpr = CircleButtonSprite::create(
       // @geode-ignore(unknown-resource)
@@ -35,14 +36,30 @@ bool MainPopup::init() {
       CCSprite::createWithSpriteFrameName(SpriteBuilder::hideSprName),
       CircleBaseColor::Green, CircleBaseSize::Tiny);
 
+  auto hsvLabel = CCLabelBMFont::create("HSV", SpriteBuilder::bigFontName);
+  hsvLabel->setScale(0.6f);
+  auto hsvBtnSpr = CircleButtonSprite::create(hsvLabel, CircleBaseColor::Green, CircleBaseSize::Tiny);
+
+  auto splitSpr = CircleButtonSprite::create(
+      CCSprite::createWithSpriteFrameName(SpriteBuilder::extendedIconSprName),
+      CircleBaseColor::Green, CircleBaseSize::Tiny);
+  splitSpr->setTopRelativeScale(0.6f);
+
   auto settingsSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::optionsBtnSprName);
   settingsSpr->setScale(0.55f);
+
+  m_hsvBtn = CCMenuItemSpriteExtra::create(hsvBtnSpr, this, menu_selector(MainPopup::onHsvToggle));
+  m_hsvSplitBtn = CCMenuItemSpriteExtra::create(splitSpr, this, menu_selector(MainPopup::onHsvSplitToggle));
+  m_hsvSplitBtn->setVisible(false);
+  m_hideBtn = CCMenuItemSpriteExtra::create(hideSpr, this, menu_selector(MainPopup::onHide));
 
   CCMenu *optionsMenu = CCMenu::create(
       CCMenuItemSpriteExtra::create(settingsSpr, this, menu_selector(MainPopup::onSettings)),
       CCMenuItemSpriteExtra::create(folderSpr, this, menu_selector(MainPopup::onSave)),
       CCMenuItemSpriteExtra::create(resetSpr, this, menu_selector(MainPopup::onReset)),
-      CCMenuItemSpriteExtra::create(hideSpr, this, menu_selector(MainPopup::onHide)),
+      m_hideBtn,
+      m_hsvBtn,
+      m_hsvSplitBtn,
       nullptr);
 
   RowLayout *mainLayout = RowLayout::create();
@@ -62,7 +79,7 @@ bool MainPopup::init() {
   m_mainLayer->addChildAtPosition(optionsMenu, Anchor::TopRight,
                                   ccp(-10.f, -20.f));
   optionsMenu->setAnchorPoint(ccp(1.f, 0.5f));
-  optionsMenu->setContentSize({200.f, 50.f});
+  optionsMenu->setContentSize({280.f, 50.f});
   optionsMenu->setLayout(RowLayout::create()
                              ->setGap(0.5f)
                              ->setAxisAlignment(AxisAlignment::End)
@@ -78,12 +95,15 @@ bool MainPopup::init() {
   optsBG->setOpacity(75);
   optsBG->setZOrder(1);
 
-  NineSlice *testModeBG = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f});
-  m_mainLayer->addChildAtPosition(testModeBG, Anchor::Bottom, ccp(0.f, 40.f));
-  testModeBG->setContentSize({cropWidth, 50.f});
-  testModeBG->setColor(ccBLACK);
-  testModeBG->setOpacity(75);
-  testModeBG->setZOrder(1);
+  m_testModeBG = NineSlice::create(SpriteBuilder::backgroundSprName, {0.0f, 0.0f, 80.0f, 80.0f}, {20.f, 20.f, 20.f, 20.f});
+  m_testModeBG->setAnchorPoint({1.f, 0.f});
+  m_testModeBG->setContentSize({ cropWidth, 80.f});
+  m_mainLayer->addChildAtPosition(m_testModeBG, Anchor::BottomRight, ccp(-10.f, 10.f));
+  m_testModeBG->setColor(ccBLACK);
+  m_testModeBG->setOpacity(75);
+  m_testModeBG->setZOrder(1);
+  // anchor layout so the panel's children re-position when it is resized
+  m_testModeBG->setLayout(AnchorLayout::create());
 
   m_colorsMenu = CCMenu::create();
   m_colorsMenu->setZOrder(2);
@@ -116,6 +136,13 @@ bool MainPopup::init() {
     swapBtn->setID("swap");
     swapBtn->m_scaleMultiplier = 1.1f;
 
+    CCSprite *hsvIconSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::extendedIconSprName);
+    hsvIconSpr->setScale(0.9f);
+
+    CCMenuItemSpriteExtra *hsvColorBtn = CCMenuItemSpriteExtra::create(hsvIconSpr, this, menu_selector(MainPopup::onColorChannelHsv));
+    hsvColorBtn->setID("hsv");
+    hsvColorBtn->m_scaleMultiplier = 1.1f;
+
     CCMenu *colorMenu = CCMenu::create();
     colorMenu->setID("menu");
     colorMenu->setTag(i);
@@ -126,6 +153,7 @@ bool MainPopup::init() {
     colorMenu->addChild(lockBtn);
     colorMenu->addChild(infoBtn);
     colorMenu->addChild(swapBtn);
+    colorMenu->addChild(hsvColorBtn);
     colorMenu->updateLayout();
 
     // init button with a default values, this will be updated in updateUI and loadLastState
@@ -174,6 +202,14 @@ bool MainPopup::init() {
   m_save->m_baseScale = 0.6f;
   m_save->m_scaleMultiplier = 1.1f;
 
+  ButtonSprite *applySpr = ButtonSprite::create("Apply");
+  m_applyBtn = CCMenuItemSpriteExtra::create(applySpr, this, menu_selector(MainPopup::onApplyHsv));
+  m_applyBtn->setAnchorPoint(ccp(0.f, 0.5f));
+  m_applyBtn->setScale(0.6f);
+  m_applyBtn->m_baseScale = 0.6f;
+  m_applyBtn->m_scaleMultiplier = 1.1f;
+  m_applyBtn->setVisible(false);
+
   CCSprite *prevSprite = SpriteBuilder::createArrow(ArrowSprite::Cyan);
   CCSprite *nextSprite = SpriteBuilder::createArrow(ArrowSprite::Cyan, true);
   m_prev = CCMenuItemSpriteExtra::create(prevSprite, this, menu_selector(MainPopup::onPrevPalette));
@@ -185,6 +221,7 @@ bool MainPopup::init() {
   m_navMenu->addChildAtPosition(m_prev, Anchor::Center, ccp(70.f, 0.f));
   m_navMenu->addChildAtPosition(m_next, Anchor::Center, ccp(100.f, 0.f));
   m_navMenu->addChildAtPosition(m_save, Anchor::Center, ccp(-225.f, 0.f));
+  m_navMenu->addChildAtPosition(m_applyBtn, Anchor::Center, ccp(-160.f, 0.f));
   mainMenu->addChildAtPosition(m_generate, Anchor::Center, ccp(197.5f, 0.f));
 
   m_infoLabel = CCLabelBMFont::create("", SpriteBuilder::bigFontName);
@@ -195,42 +232,42 @@ bool MainPopup::init() {
   CCLabelBMFont *simulationLabel = CCLabelBMFont::create("Palette Simulation Mode", SpriteBuilder::goldFontName);
   simulationLabel->setScale(0.4f);
   simulationLabel->setAnchorPoint(ccp(0.f, 0.5f));
-  testModeBG->addChildAtPosition(simulationLabel, Anchor::TopLeft, ccp(10.f, -5.f));
+  m_testModeBG->addChildAtPosition(simulationLabel, Anchor::TopLeft, ccp(10.f, -10.f));
 
   m_simulationColorsLabel = CCLabelBMFont::create("Modified Colors: 0", SpriteBuilder::bigFontName);
   m_simulationColorsLabel->setScale(0.3f);
   m_simulationColorsLabel->setAnchorPoint(ccp(0.f, 0.5f));
-  testModeBG->addChildAtPosition(m_simulationColorsLabel, Anchor::TopLeft, ccp(10.f, -20.f));
+  m_testModeBG->addChildAtPosition(m_simulationColorsLabel, Anchor::TopLeft, ccp(10.f, -28.f));
 
   m_simulationSavedLabel = CCLabelBMFont::create("Saved Colors: 0", SpriteBuilder::bigFontName);
   m_simulationSavedLabel->setScale(0.3f);
   m_simulationSavedLabel->setAnchorPoint(ccp(0.f, 0.5f));
-  testModeBG->addChildAtPosition(m_simulationSavedLabel, Anchor::TopLeft, ccp(10.f, -30.f));
+  m_testModeBG->addChildAtPosition(m_simulationSavedLabel, Anchor::TopLeft, ccp(10.f, -44.f));
 
   m_simulationSkippedLabel = CCLabelBMFont::create("Skipped Colors: 0", SpriteBuilder::bigFontName);
   m_simulationSkippedLabel->setScale(0.3f);
   m_simulationSkippedLabel->setAnchorPoint(ccp(0.f, 0.5f));
-  testModeBG->addChildAtPosition(m_simulationSkippedLabel, Anchor::TopLeft, ccp(10.f, -40.f));
+  m_testModeBG->addChildAtPosition(m_simulationSkippedLabel, Anchor::TopLeft, ccp(10.f, -60.f));
 
   m_testMenu = CCMenu::create();
   m_testMenu->setZOrder(2);
-  m_testMenu->setContentSize(ccp(100.f, 30.f));
+  m_testMenu->setContentSize(ccp(90.f, 30.f));
   m_testMenu->setAnchorPoint(ccp(1.f, 0.5f));
   m_testMenu->setLayout(RowLayout::create()
                             ->setGap(5.f)
                             ->setAxisAlignment(AxisAlignment::Even)
                             ->setCrossAxisOverflow(true)
                             ->setAutoScale(false));
-  testModeBG->addChildAtPosition(m_testMenu, Anchor::Right, ccp(-10.f, 0.f));
+  m_testModeBG->addChildAtPosition(m_testMenu, Anchor::BottomRight, ccp(-12.f, 26.f));
 
   const char *frame = simulation.isActive() ? SpriteBuilder::stopEditorBtnSprName : SpriteBuilder::playEditorBtnSprName;
   CCSprite *testSpr = CCSprite::createWithSpriteFrameName(frame);
   CCSprite *setupSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::optionsBtnSprName);
   CCSprite *helpSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::helpBtnSprName);
 
-  testSpr->setScale(0.8f);
-  setupSpr->setScale(0.6f);
-  helpSpr->setScale(0.8f);
+  testSpr->setScale(0.7f);
+  setupSpr->setScale(0.55f);
+  helpSpr->setScale(0.7f);
 
   m_test = CCMenuItemSpriteExtra::create(testSpr, testSpr, this, menu_selector(MainPopup::onSimulationToggle));
   CCMenuItemSpriteExtra *settingsBtn = CCMenuItemSpriteExtra::create(setupSpr, setupSpr, this, menu_selector(MainPopup::onSimulationSettings));
@@ -239,6 +276,11 @@ bool MainPopup::init() {
   m_testMenu->addChild(helpBtn);
   m_testMenu->addChild(settingsBtn);
   m_testMenu->addChild(m_test);
+
+  createHsvWidget(m_mainLayer, Anchor::BottomLeft, ccp(77.f, 50.f));
+  m_hsvWidget->setScale(0.5f);
+
+  updateHsvLayout();
 
   if (m_isLoaded) {
     loadLastState();
@@ -288,7 +330,8 @@ void MainPopup::onSave(CCObject *) {
 
 void MainPopup::onHide(CCObject *) { 
   m_showColorMenu = !m_showColorMenu;
-  handleHide(m_showColorMenu); 
+  handleHide(m_showColorMenu);
+  SpriteBuilder::setCircleButtonColor(m_hideBtn, !m_showColorMenu);
 }
 
 void MainPopup::onSettings(CCObject *) {
@@ -331,7 +374,6 @@ void MainPopup::onGeneratePalette(CCObject *) {
 
       if (status == HueMintService::RequestStatus::Ok && !result.colors.empty()) {
         self->m_isLoaded = true;
-        self->data.clearSaved();
         self->manager.clearLoaded();
         self->updateColorSprites(result.colors);
         self->updateUI();
@@ -371,10 +413,135 @@ void MainPopup::onSavePalette(CCObject *sender) {
   }
 
   data.create(manager.getCurrentPalette(), m_nameInput->getString());
-  data.setSaved(service.getPalettePool().currentItem);
   updateSaveButton();
 
   Notification::create("Palette saved", NotificationIcon::Success)->show();
+}
+
+void MainPopup::onHsvToggle(CCObject *) {
+  m_hsvMode = !m_hsvMode;
+  m_singleHsvIndex = -1;
+
+  updateHsvLayout();
+  SpriteBuilder::setCircleButtonColor(m_hsvBtn, m_hsvMode);
+  SpriteBuilder::setCircleButtonColor(m_hsvSplitBtn, m_hsvMode && m_hsvSplit, 0.6f);
+  updateColorSprites(manager.getCurrentPalette().colors);
+}
+
+void MainPopup::onHsvSplitToggle(CCObject *) {
+  m_hsvSplit = !m_hsvSplit;
+  SpriteBuilder::setCircleButtonColor(m_hsvSplitBtn, m_hsvMode && m_hsvSplit, 0.6f);
+  updateColorSprites(manager.getCurrentPalette().colors);
+}
+
+// toggles HSV mode scoped to a single palette slot only
+void MainPopup::onColorChannelHsv(CCObject *sender) {
+  auto item = static_cast<CCMenuItemSpriteExtra *>(sender);
+  auto menu = static_cast<CCMenu *>(item->getParent());
+  int index = menu->getTag();
+
+  if (m_hsvMode && m_singleHsvIndex == index) {
+    resetHsvState(false);
+  } else {
+    m_hsvMode = true;
+    m_hsvSplit = true;
+    m_singleHsvIndex = index;
+
+    // sync from the widget so the slot reflects the widget's current value
+    if (m_hsvWidget) m_singleHsvValue = m_hsvWidget->m_hsv;
+  }
+
+  updateHsvLayout();
+  SpriteBuilder::setCircleButtonColor(m_hsvBtn, m_hsvMode);
+  SpriteBuilder::setCircleButtonColor(m_hsvSplitBtn, m_hsvMode && m_hsvSplit, 0.6f);
+  updateColorSprites(manager.getCurrentPalette().colors);
+}
+
+void MainPopup::onHsvValueChanged(const ccHSVValue &value) {
+  if (m_singleHsvIndex >= 0) {
+    m_singleHsvValue = value;
+  } else {
+    m_hsvValue = value;
+  }
+  applyHsv();
+}
+
+void MainPopup::applyHsv() {
+  updateColorSprites(manager.getCurrentPalette().colors);
+  updateApplyButton();
+}
+
+void MainPopup::updateHsvLayout() {
+  if (m_hsvWidget) m_hsvWidget->setVisible(m_hsvMode);
+  if (m_hsvSplitBtn) m_hsvSplitBtn->setVisible(m_hsvMode);
+
+  if (m_testModeBG) {
+    m_testModeBG->setContentSize({ m_hsvMode ? 275.f : cropWidth, 80.f });
+    m_testModeBG->updateLayout();
+  }
+
+  // the split button changes visibility, so the options menu must re-layout
+  if (m_hsvBtn && m_hsvBtn->getParent()) {
+    static_cast<CCMenu *>(m_hsvBtn->getParent())->updateLayout();
+  }
+}
+
+void MainPopup::updateApplyButton() {
+  if (!m_applyBtn) return;
+
+  // the value is "modified" when it differs from identity
+  bool modified = (m_singleHsvIndex >= 0)
+                      ? !ColorUtils::isHsvIdentity(m_singleHsvValue)
+                      : !ColorUtils::isHsvIdentity(m_hsvValue);
+
+  bool visible = m_hsvMode && modified;
+  m_applyBtn->setVisible(visible);
+
+  if (visible && m_navMenu) m_navMenu->updateLayout();
+}
+
+void MainPopup::resetHsvState(bool resetValues) {
+  m_hsvMode = false;
+  m_hsvSplit = false;
+  m_singleHsvIndex = -1;
+
+  if (resetValues) {
+    m_hsvValue = ColorUtils::HSV_IDENTITY;
+    m_singleHsvValue = ColorUtils::HSV_IDENTITY;
+    resetHsvWidget();
+  }
+}
+
+void MainPopup::onApplyHsv(CCObject *) {
+  bool single = m_singleHsvIndex >= 0;
+  geode::createQuickPopup(
+      "Apply HSV",
+      single
+          ? "This will <cr>replace</c> the selected color with the result of "
+            "the HSV adjustment. This cannot be undone."
+          : "This will <cr>replace</c> the current palette colors with the "
+            "result of the HSV adjustment. This cannot be undone.",
+      "Cancel", "Apply", [this, single](auto, bool btn2) {
+        if (!btn2)
+          return;
+
+        if (single) {
+          manager.applyHsv(m_singleHsvValue, m_singleHsvIndex);
+        } else {
+          manager.applyHsv(m_hsvValue);
+        }
+
+        resetHsvState(true);
+        updateHsvLayout();
+        SpriteBuilder::setCircleButtonColor(m_hsvBtn, m_hsvMode);
+        SpriteBuilder::setCircleButtonColor(m_hsvSplitBtn, false, 0.6f);
+        updateColorSprites(manager.getCurrentPalette().colors);
+
+        Notification::create(
+          "Palette colors replaced",
+          NotificationIcon::Success)
+          ->show();
+      });
 }
 
 void MainPopup::onNextPalette(CCObject *sender) {
@@ -496,17 +663,29 @@ void MainPopup::updateColorSprites(std::vector<std::string> colors) {
   CCArrayExt<CCMenuItemSpriteExtra *> colorButtons = m_colorButtons->asExt();
     int limit = getCurrentColorLimit();
     for (int i = 0; i < manager.MAX_COLORS; i++) {
-        updateColorButton(colorButtons[i], i, limit);
+        // scope: global (all slots) unless a single slot is selected
+        bool inScope = m_singleHsvIndex < 0 || i == m_singleHsvIndex;
+        bool active = m_hsvMode && inScope;
+        bool overlay = active && m_hsvSplit;
+        updateColorButton(colorButtons[i], i, limit, overlay);
 
     if (i < colors.size()) {
+      ccColor3B original = cc3bFromHexString(colors.at(i)).unwrapOr(ccWHITE);
+      ccHSVValue value = (m_singleHsvIndex >= 0) ? m_singleHsvValue : m_hsvValue;
+      ccColor3B transformed = GameToolbox::transformColor(original, value);
       NineSlice *colorSpr = static_cast<NineSlice *>(colorButtons[i]->getNormalImage());
-      colorSpr->setColor(cc3bFromHexString(colors.at(i)).unwrapOr(ccWHITE));
+      colorSpr->setColor(active && !m_hsvSplit ? transformed : original);
+
+      if (NineSlice *hsvSpr = static_cast<NineSlice *>(colorButtons[i]->getChildByID("hsv-color"))) {
+        hsvSpr->setColor(transformed);
+      }
     }
   }
 
   // sync visibility of the color menu with the color button
   handleHide(m_showColorMenu);
   m_colorsMenu->updateLayout();
+  updateApplyButton();
 }
 
 void MainPopup::updateInfoLabel() {
@@ -525,16 +704,27 @@ void MainPopup::updateSimulationLabels() {
   m_simulationSkippedLabel->setString(fmt::format("Skipped Colors: {}", simulation.getSkippedColors()).c_str());
 }
 
-void MainPopup::updateColorButton(CCMenuItemSpriteExtra *btn, int index, int limit) {
+void MainPopup::updateColorButton(CCMenuItemSpriteExtra *btn, int index, int limit, bool hsv) {
   bool isVisible = index < limit;
 
   if (isVisible) {
     updateLockButton(index, manager.isColorLocked(index));
+    updateSingleHsvButton(index);
 
     float width = cropWidth / limit;
     btn->setNormalImage(SpriteBuilder::createColorSpr(btn, index, limit, width, 100.f));
     btn->setContentSize({width, 100.f});
     btn->updateSprite();
+
+    // size and center the hsv overlay on the bottom half of the slot
+    if (NineSlice *hsvSpr = static_cast<NineSlice *>(btn->getChildByID("hsv-color"))) {
+      hsvSpr->setContentSize({width, 50.f});
+
+      bool rotated = hsvSpr->getRotation() == 180.f;
+      hsvSpr->setPosition({width / 2.f, rotated ? 50.f : 0.f});
+      hsvSpr->setVisible(hsv);
+    }
+
     btn->updateLayout();
   }
   btn->setVisible(isVisible);
@@ -561,17 +751,30 @@ void MainPopup::updateLockButton(int index, bool locked) {
   static_cast<CCSprite *>(lockBtn->getNormalImage())->setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frame));
 }
 
+void MainPopup::updateSingleHsvButton(int index) {
+  if (index < 0 || index >= (int)m_singleHsvBtnState.size()) return;
+  int active = index == m_singleHsvIndex ? 1 : 0;
+  if (m_singleHsvBtnState[index] == active) return;
+  m_singleHsvBtnState[index] = active;
+
+  CCMenuItemSpriteExtra *color = m_colorButtons->asExt<CCMenuItemSpriteExtra *>()[index];
+  CCMenuItemSpriteExtra *hsvBtn = static_cast<CCMenuItemSpriteExtra *>(color->getChildByIDRecursive("hsv"));
+  if (!hsvBtn) return;
+  if (CCSprite *spr = static_cast<CCSprite *>(hsvBtn->getNormalImage())) {
+    spr->setColor(active ? ccColor3B{0, 255, 255} : ccWHITE);
+  }
+}
+
 void MainPopup::updateSaveButton() {
-  bool isSaved = data.isSaved(HueMintService::get().getPalettePool().currentItem);
   m_save->setVisible(m_isLoaded);
-  m_save->setEnabled(!isSaved);
+  m_save->setEnabled(m_isLoaded);
   if (!m_isLoaded) return;
 
   bool isLoaded = SettingsManager::get().isLoaded(manager.getCurrentPalette().id);
-  std::string title = isSaved ? "Saved" : isLoaded ? "Update" : "Save";
+  std::string title = isLoaded ? "Update" : "Save";
   ButtonSprite *saveSpr = static_cast<ButtonSprite *>(m_save->getNormalImage());
   saveSpr->setString(title.c_str());
-  saveSpr->updateBGImage(isSaved    ? "GJ_button_02.png" : isLoaded ? "GJ_button_03.png" : "GJ_button_01.png");
+  saveSpr->updateBGImage(isLoaded ? "GJ_button_03.png" : "GJ_button_01.png");
 }
 
 void MainPopup::updateNameInput() {
@@ -604,7 +807,9 @@ void MainPopup::handleReset() {
   manager.resetPalettePool();
   manager.clearLoaded();
   manager.resetLocks();
-  data.clearSaved();
+
+  // reset HSV modes and values
+  resetHsvState(true);
 
   // stop simulation if active, this will also restore original colors
   if (simulation.isActive()) {
@@ -612,6 +817,10 @@ void MainPopup::handleReset() {
     simulation.clearSettings();
     Notification::create("Simulation mode stopped, original colors restored", NotificationIcon::Info)->show();
   }
+
+  updateHsvLayout();
+  SpriteBuilder::setCircleButtonColor(m_hsvBtn, m_hsvMode);
+  SpriteBuilder::setCircleButtonColor(m_hsvSplitBtn, false, 0.6f);
   updateColorSprites(manager.getCurrentPalette().colors);
   updateUI();
 }

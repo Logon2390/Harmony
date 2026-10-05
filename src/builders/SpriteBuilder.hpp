@@ -34,7 +34,11 @@ namespace SpriteBuilder {
     constexpr const char *circleSprName = "circle.png";
     constexpr const char *swapBtnSprName = "edit_eChangeBG_001.png";
     constexpr const char *colorBtnSprName = "GJ_colorBtn_001.png";
+    constexpr const char *hsvBtnSprName = "GJ_hsvBtn_001.png";
+    constexpr const char *onHsvBtnSprName = "GJ_hsv2Btn_001.png";
+    constexpr const char *extendedIconSprName = "GJ_extendedIcon_001.png";
     const char* formatArrowSpriteName(ArrowSprite sprite);
     CCSprite *createArrow(ArrowSprite sprite, bool flipped = false, float scale = 0.6f);
     NineSlice *createColorSpr(CCMenuItemSpriteExtra *btn, int index, int limit, float width = 0.f,float height = 0.f);
+    void setCircleButtonColor(CCMenuItemSpriteExtra *btn, bool active, float topScale = 1.f);
 }

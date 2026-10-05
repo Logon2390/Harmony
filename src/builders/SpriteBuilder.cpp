@@ -1,4 +1,5 @@
 #include "SpriteBuilder.hpp"
+#include <Geode/ui/BasedButtonSprite.hpp>
 
 CCSprite *SpriteBuilder::createArrow(ArrowSprite sprite, bool flipped, float scale)
 {
@@ -23,18 +24,45 @@ NineSlice *SpriteBuilder::createColorSpr(CCMenuItemSpriteExtra *btn, int index, 
 
   if (create) {
     bool isCorner = index == 0 || index == limit - 1;
+    float rotation = isCorner && index == limit - 1 ? 180.f : 0.f;
     const char *spriteName = isCorner ? SpriteBuilder::backgroundSprName: SpriteBuilder::squareSprName;
     CCRect rect = isCorner ? CCRect{0, 0, 50, 80} : CCRect{0, 0, 80, 80};
 
     colorSpr = NineSlice::create(spriteName, rect);
-    colorSpr->setRotation(isCorner && index == limit - 1 ? 180.f : 0.f);
+    colorSpr->setRotation(rotation);
+
+    if (CCNode *old = btn->getChildByID("hsv-color")) old->removeFromParent();
+    NineSlice *hsvSpr = NineSlice::create(spriteName, rect);
+    hsvSpr->setRotation(rotation);
+    hsvSpr->setID("hsv-color");
+    hsvSpr->setAnchorPoint({0.5f, 0.f});
+    hsvSpr->setZOrder(2);
+    hsvSpr->setVisible(false);
+    btn->addChild(hsvSpr);
   } else {
     colorSpr = static_cast<NineSlice *>(btn->getNormalImage());
   }
   btn->setUserFlag("corner"_spr, isRightCorner);
   colorSpr->setContentSize({width, height});
-  colorSpr->setColor({255, 255, 255});
+  colorSpr->setColor(ccWHITE);
+
+  btn->updateLayout();
   return colorSpr;
+}
+
+void SpriteBuilder::setCircleButtonColor(CCMenuItemSpriteExtra *btn, bool active, float topScale) {
+  auto old = typeinfo_cast<CircleButtonSprite *>(btn->getNormalImage());
+  if (!old) return;
+
+  // keep the top node alive while the old base is replaced
+  Ref<CCNode> top = old->getTopNode();
+
+  auto color = active ? CircleBaseColor::Cyan : CircleBaseColor::Green;
+  auto base = CircleButtonSprite::create(top, color, CircleBaseSize::Tiny);
+  base->setTopRelativeScale(topScale);
+  btn->setNormalImage(base);
+  if (btn->getSelectedImage()) btn->setSelectedImage(base);
+  btn->setContentSize(base->getContentSize());
 }
 
 const char* SpriteBuilder::formatArrowSpriteName(ArrowSprite sprite) {
