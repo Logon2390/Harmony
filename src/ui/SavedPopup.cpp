@@ -36,7 +36,7 @@ bool SavedPopup::init() {
   m_searchInput = TextInput::create(260.f, "Search by name");
   m_searchInput->setCommonFilter(CommonFilter::Alphanumeric);
   m_searchInput->setMaxCharCount(25);
-  m_searchInput->setTextAlign(TextInputAlign::Left);
+  m_searchInput->setAlignment(geode::Label::Alignment::Left);
   m_searchInput->setAnchorPoint({0.f, 0.5f});
   m_searchInput->setScale(0.8f);
 

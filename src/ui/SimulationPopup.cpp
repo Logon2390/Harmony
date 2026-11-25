@@ -24,7 +24,7 @@ bool SimulationPopup::init() {
   m_layer->m_contentLayer->setContentSize({width - 20.f, 120.f});
   m_layer->m_contentLayer->setLayout(ScrollLayer::createDefaultListLayout());
 
-  m_mainLayer->addChildAtPosition(m_layer, Anchor::BottomLeft, ccp(10.f, 20.f));
+  m_mainLayer->addChildAtPosition(m_layer, Anchor::Center, ccp(0.f, -10.f));
 
   m_colors = TextInput::create(100.f, "6");
   m_colors->setString(geode::utils::numToString(simulation.getMaxColorCount()));
@@ -32,7 +32,7 @@ bool SimulationPopup::init() {
   m_colors->setMaxCharCount(2);
   m_colors->setScale(0.6f);
   m_colors->setCallback(
-      [this](gd::string input) { this->onColorsInput(input); });
+      [this](std::string const& input) { this->onColorsInput(input); });
 
   MenuAction colorsAction = {
     "Number of Colors",
@@ -110,7 +110,7 @@ void SimulationPopup::onIncreaseColors(CCObject *) {
   }
 }
 
-void SimulationPopup::onColorsInput(gd::string input) {
+void SimulationPopup::onColorsInput(std::string const& input) {
   auto result = geode::utils::numFromString<int>(input);
 
   if (result.isOk()) {

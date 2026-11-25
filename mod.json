@@ -1,17 +1,17 @@
 {
-	"geode": "5.10.1",
+	"geode": "6.0.0",
 	"gd": {
-		"win": "2.2081",
-		"android": "2.2081",
-		"mac": "2.2081"
+		"win": "2.2091",
+		"android": "2.2091",
+		"mac": "2.2091"
 	},
 	"id": "logon.harmony",
 	"name": "Harmony",
-	"version": "v1.1.0",
+	"version": "v1.1.1",
 	"developer": "Logon",
 	"description": "Color palette generator for Geometry Dash.",
 	"dependencies": {
-		"geode.node-ids": ">=v1.20.0"
+		"geode.node-ids": ">=v1.24.0-beta.1"
 	},
 	"resources": {
 		"spritesheets": {

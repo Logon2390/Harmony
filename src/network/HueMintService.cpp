@@ -4,8 +4,9 @@
 SettingsManager &manager = SettingsManager::get();
 
 void HueMintService::pruneExpiredTimers() {
+    const auto now = std::chrono::steady_clock::now();
     while (!m_requestTimers.empty() &&
-           m_requestTimers.front().elapsed<std::chrono::seconds>() >= WINDOW) {
+           now - m_requestTimers.front() >= std::chrono::seconds(WINDOW)) {
         m_requestTimers.pop_front();
     }
 }
@@ -24,9 +25,9 @@ int HueMintService::getSecondsUntilNextSlot() {
     pruneExpiredTimers();
     if (static_cast<int>(m_requestTimers.size()) < MAX_REQUESTS) return 0;
 
-    int elapsed = m_requestTimers.front().elapsed<std::chrono::seconds>();
-    int remaining = WINDOW - elapsed;
-    return remaining;
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::steady_clock::now() - m_requestTimers.front()).count();
+    return WINDOW - static_cast<int>(elapsed);
 }
 
 bool HueMintService::request(std::function<void(Palette, RequestStatus)> onComplete) {
@@ -38,7 +39,7 @@ bool HueMintService::request(std::function<void(Palette, RequestStatus)> onCompl
   auto req = web::WebRequest();
   matjson::Value request = manager.getRequest();
   req.header("Content-Type", "application/json");
-  req.timeout(std::chrono::seconds(30));
+  req.timeout(asp::Duration::fromSecs(30));
   req.bodyJSON(request);
 
   m_listener.spawn(req.post(m_url), [this, onComplete](web::WebResponse res) {
@@ -48,7 +49,7 @@ bool HueMintService::request(std::function<void(Palette, RequestStatus)> onCompl
         .as<ResponseBody>()
         .unwrap();
 
-      m_requestTimers.emplace_back();
+      m_requestTimers.emplace_back(std::chrono::steady_clock::now());
       mapPaletteResult(parsed);
       Palette palette = parsed.results.empty() ? Palette{} : parsed.results.at(0);
       onComplete(palette, RequestStatus::Ok);

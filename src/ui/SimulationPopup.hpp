@@ -24,7 +24,7 @@ protected:
 
     void onDecreaseColors(CCObject* sender);
     void onIncreaseColors(CCObject* sender);
-    void onColorsInput(gd::string input);
+    void onColorsInput(std::string const& input);
     void onSpecialColors(CCObject* sender);
     void onCustomColors(CCObject* sender);
     void onRestoreConfig(CCObject* sender);

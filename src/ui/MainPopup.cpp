@@ -128,9 +128,8 @@ bool MainPopup::init() {
     infoBtn->m_scaleMultiplier = 1.1f;
 
     CCSprite *swapSpr = CCSprite::createWithSpriteFrameName(SpriteBuilder::swapBtnSprName);
-    CCRect rect = swapSpr->getTextureRect();
-    CCRect newRect = {rect.origin.x, rect.origin.y, rect.size.width, rect.size.height - 10.f};
-    swapSpr->setTextureRect(newRect, true, newRect.size);
+    swapSpr->setRotation(90.f);
+    swapSpr->setColor(ccc3(0, 225, 255));
 
     CCMenuItemSpriteExtra *swapBtn = CCMenuItemSpriteExtra::create(swapSpr, this, menu_selector(MainPopup::onSwapColorChannel));
     swapBtn->setID("swap");
@@ -172,7 +171,7 @@ bool MainPopup::init() {
   m_nameInput->setString("Palette name");
   m_nameInput->setCommonFilter(CommonFilter::Name);
   m_nameInput->setMaxCharCount(25);
-  m_nameInput->setTextAlign(TextInputAlign::Left);
+  m_nameInput->setAlignment(geode::Label::Alignment::Left);
   m_nameInput->setAnchorPoint({0.f, 0.5f});
   m_nameInput->setScale(0.7f);
   m_nameInput->hideBG();

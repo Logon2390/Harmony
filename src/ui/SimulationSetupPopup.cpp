@@ -135,7 +135,7 @@ bool SimulationSetupPopup::init(int colorID, bool specialColors) {
   m_setups->m_contentLayer->setLayout(ScrollLayer::createDefaultListLayout());
 
   Scrollbar *scrollbar = Scrollbar::create(m_setups);
-  setupBG->addChildAtPosition(m_setups, Anchor::BottomLeft, ccp(10.f, 0.f));
+  setupBG->addChildAtPosition(m_setups, Anchor::Center, ccp(0.f, -5.f));
   setupBG->addChildAtPosition(scrollbar, Anchor::Right, ccp(-5.f, 0.f));
 
   initColorsSetup();

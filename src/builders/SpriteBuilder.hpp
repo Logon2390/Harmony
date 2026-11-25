@@ -32,7 +32,7 @@ namespace SpriteBuilder {
     constexpr const char *inUseBtnSprName = "GJ_selectSongOnBtn_001.png";
     constexpr const char *useBtnSprName = "GJ_selectSongBtn_001.png";
     constexpr const char *circleSprName = "circle.png";
-    constexpr const char *swapBtnSprName = "edit_eChangeBG_001.png";
+    constexpr const char *swapBtnSprName = "GJ_sortIcon_001.png";
     constexpr const char *colorBtnSprName = "GJ_colorBtn_001.png";
     constexpr const char *hsvBtnSprName = "GJ_hsvBtn_001.png";
     constexpr const char *onHsvBtnSprName = "GJ_hsv2Btn_001.png";

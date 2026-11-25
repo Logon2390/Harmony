@@ -39,21 +39,21 @@ bool SettingsPopup::init() {
   m_colors->setCommonFilter(CommonFilter::Int);
   m_colors->setMaxCharCount(2);
   m_colors->setScale(0.6f);
-  m_colors->setCallback([this](gd::string input) { this->onColorsInput(input); });
+  m_colors->setCallback([this](std::string const& input) { this->onColorsInput(input); });
 
   m_temperature = TextInput::create(100.f, "1.3");
   m_temperature->setString(std::to_string(manager.getRequest().temperature).erase(3).c_str());
   m_temperature->setCommonFilter(CommonFilter::Float);
   m_temperature->setMaxCharCount(3);
   m_temperature->setScale(0.6f);
-  m_temperature->setCallback([this](gd::string input) { this->onTemperatureInput(input); });
+  m_temperature->setCallback([this](std::string const& input) { this->onTemperatureInput(input); });
 
   m_results = TextInput::create(100.f, "10");
   m_results->setString(std::to_string(manager.getRequest().num_results).c_str());
   m_results->setCommonFilter(CommonFilter::Int);
   m_results->setMaxCharCount(2);
   m_results->setScale(0.6f);
-  m_results->setCallback([this](gd::string input) { this->onResultsInput(input); });
+  m_results->setCallback([this](std::string const& input) { this->onResultsInput(input); });
 
   MenuAction modeAction = {
     "Mode",
@@ -221,7 +221,7 @@ void SettingsPopup::onIncreaseResults(CCObject *) {
   }
 }
 
-void SettingsPopup::onColorsInput(gd::string input) {
+void SettingsPopup::onColorsInput(std::string const& input) {
   auto result = geode::utils::numFromString<int>(input);
 
   if (result.isOk()) {
@@ -232,7 +232,7 @@ void SettingsPopup::onColorsInput(gd::string input) {
   }
 }
 
-void SettingsPopup::onTemperatureInput(gd::string input) {
+void SettingsPopup::onTemperatureInput(std::string const& input) {
   auto result = geode::utils::numFromString<float>(input);
 
   if (result.isOk()) {
@@ -242,7 +242,7 @@ void SettingsPopup::onTemperatureInput(gd::string input) {
   }
 }
 
-void SettingsPopup::onResultsInput(gd::string input) {
+void SettingsPopup::onResultsInput(std::string const& input) {
   auto result = geode::utils::numFromString<int>(input);
   if (result.isOk()) {
     int value = result.unwrap();

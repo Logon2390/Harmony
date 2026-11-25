@@ -31,7 +31,6 @@ class $modify(MyEditorUI, EditorUI) {
 
         auto sprite = EditorButtonSprite::create(CCSprite::createWithSpriteFrameName("icon.png"_spr), EditorBaseColor::LightBlue);
         m_fields->mainBtn = CCMenuItemSpriteExtra::create(sprite, this, menu_selector(MyEditorUI::onMainPopup));
-        m_fields->mainBtn->setContentSize(ccp(40.f, 40.f));
         m_fields->mainBtn->setID("harmony-button"_spr);
 
         LevelSettingsObject* settings = this->m_editorLayer->m_levelSettings;

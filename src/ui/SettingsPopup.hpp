@@ -37,9 +37,9 @@ protected:
     void onIncreaseTemp(CCObject* sender);
     void onDecreaseResults(CCObject* sender);
     void onIncreaseResults(CCObject* sender);
-    void onColorsInput(gd::string input);
-    void onTemperatureInput(gd::string input);
-    void onResultsInput(gd::string input);
+    void onColorsInput(std::string const& input);
+    void onTemperatureInput(std::string const& input);
+    void onResultsInput(std::string const& input);
     void onAdjacency(CCObject* sender);
     void onResetSettings(CCObject* sender);
     void onModeInfo(CCObject* sender);

@@ -2,6 +2,8 @@
 #include "../managers/SettingsManager.hpp"
 #include "../managers/DataManager.hpp"
 #include <Geode/utils/web.hpp>
+#include <chrono>
+#include <deque>
 
 using namespace geode::prelude;
 
@@ -33,7 +35,7 @@ public:
 private:
   static constexpr int MAX_REQUESTS = 15;
   static constexpr int WINDOW = 60;
-  std::deque<geode::utils::Timer<>> m_requestTimers;
+  std::deque<std::chrono::steady_clock::time_point> m_requestTimers;
   void pruneExpiredTimers();
   bool isRateLimited();
   PaletteResult m_currentPaletteResult;
