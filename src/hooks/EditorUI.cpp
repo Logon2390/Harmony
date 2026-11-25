@@ -13,7 +13,6 @@ class $modify(MyEditorUI, EditorUI) {
         CCMenuItemSpriteExtra* mainBtn;
         SimulationOverlay* simulationOverlay;
         SimulationManager& manager = SimulationManager::get();
-        bool isPlayTesting = false;
         ~Fields() {
             ColorUtils::get().m_colorSelectPopup = nullptr;
             manager.m_effectManager = nullptr;
@@ -77,19 +76,8 @@ class $modify(MyEditorUI, EditorUI) {
     void showUI(bool show) {
         m_fields->mainBtn->setVisible(show);
         if (m_fields->simulationOverlay) {
-            bool isPlayTesting = m_fields->isPlayTesting;
-            m_fields->simulationOverlay->setVisible(show && m_fields->manager.shouldDisplayOverlay() && !isPlayTesting);
+            m_fields->simulationOverlay->setVisible(show && m_fields->manager.shouldDisplayOverlay());
         }
 		return EditorUI::showUI(show);
-    }
-
-    void onPlaytest(CCObject* sender) {
-        m_fields->isPlayTesting = true;
-        EditorUI::onPlaytest(sender);
-    }
-
-    void onStopPlaytest(CCObject* sender) {
-        m_fields->isPlayTesting = false;
-        EditorUI::onStopPlaytest(sender);
     }
 };
