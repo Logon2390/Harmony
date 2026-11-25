@@ -56,7 +56,9 @@ bool SimulationSetupPopup::init(int colorID, bool specialColors) {
     this, menu_selector(SimulationSetupPopup::onInfo));
   infoBtn->setScale(0.7f);
   infoBtn->m_baseScale = 0.7f;
-  this->m_closeBtn->getParent()->addChildAtPosition(infoBtn, Anchor::TopRight, ccp(-20.f, -20.f));
+  
+  auto optsMenu = this->m_mainLayer->getChildByID("button-menu");
+  optsMenu->addChildAtPosition(infoBtn, Anchor::TopRight, ccp(-20.f, -20.f));
 
   m_colorsMenu = CCMenu::create();
   m_colorsMenu->setZOrder(2);

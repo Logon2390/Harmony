@@ -80,7 +80,7 @@ bool SavedPopup::init() {
   m_mainLayer->addChildAtPosition(m_menu, Anchor::Center, ccp(0.f, -20.f));
   m_mainLayer->addChildAtPosition(m_pageLabel, Anchor::TopRight, ccp(-5.f, -10.f));
 
-  auto optsMenu = this->m_closeBtn->getParent();
+  auto optsMenu = this->m_mainLayer->getChildByID("button-menu");
   optsMenu->addChildAtPosition(m_searchBtn, Anchor::TopRight, ccp(-115.f, -30.f));
   optsMenu->addChildAtPosition(m_clearBtn, Anchor::TopRight, ccp(-80.f, -30.f));
   optsMenu->addChildAtPosition(m_favOnlyBtn, Anchor::TopRight, ccp(-50.f, -30.f));

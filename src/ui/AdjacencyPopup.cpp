@@ -28,8 +28,9 @@ bool AdjacencyPopup::init(int colors) {
       menu_selector(AdjacencyPopup::onGradientToggle), 0.5f);
   toggler->setPosition({100, 100});
   toggler->toggle(settings.isGradientActive());
-  m_closeBtn->getParent()->addChildAtPosition(toggler, Anchor::Top,
-                                              ccp(-50.f, -40.f));
+
+  auto optsMenu = this->m_mainLayer->getChildByID("button-menu");
+  optsMenu->addChildAtPosition(toggler, Anchor::Top, ccp(-50.f, -40.f));
 
   CCLabelBMFont *label = CCLabelBMFont::create("Gradient mode", SpriteBuilder::bigFontName);
   label->setScale(0.4f);
