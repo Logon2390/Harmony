@@ -1,3 +1,6 @@
+# 1.1.1
+- Geode 6.0.0 support.
+
 # 1.1.0
 - Adds HSV settings to palettes, globally or per color, with a comparison view.
 - Adds HSV settings to the palette simulation, applied to linked channels in real time.
